@@ -129,7 +129,7 @@ public class HybridLauncher : MonoBehaviour
         RuntimeSettings = JsonConvert.DeserializeObject<HybridRuntimeSettings>(data);
     }
     
-            /// <summary>
+    /// <summary>
     /// 加载补充元数据的AOTDLL
     /// </summary>
     /// <param name="scriptPackage"></param>

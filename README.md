@@ -1,424 +1,482 @@
-# README_Release2025
+# HybridCLR + YooAsset + UniTask 集成解决方案
 
+<div align="center">
 
+[![Unity 2022.3](https://img.shields.io/badge/Unity-2022.3-brightgreen)](https://unity.com/) [![HybridCLR](https://img.shields.io/badge/HybridCLR-v8.2.0-blue)](https://github.com/focus-creative-games/hybridclr) [![YooAsset](https://img.shields.io/badge/YooAsset-v2.3.9-orange)](https://github.com/tuyoogame/YooAsset) [![UniTask](https://img.shields.io/badge/UniTask-v2.5.10-purple)](https://github.com/Cysharp/UniTask) [![License](https://img.shields.io/badge/License-MIT-green)](LICENSE) [![English](https://img.shields.io/badge/English-Document-blue)](https://github.com/YangLingCloud/HybridCLR_YooAsset_UniTask/blob/main/README_EN.md)
 
-## 首先需要明确的概念
+**专业级 Unity 热更新与资源管理一体化解决方案**
 
+*企业级热更新框架 · 高性能资源管理 · 现代化异步编程*
 
+</div>
 
-本仓库基于`Unity2022.3.5.7f1c2` ,`HybridCLR8.2.0`,`YooAsset2.3.9`,`UniTask2.5.10`版本进行整合
+---
 
-提供一个较为简单的上手文档
+## 目录导航
 
+- [项目简介](#项目简介)
+- [核心概念](#核心概念)
+- [环境准备](#环境准备)
+- [快速开始](#快速开始)
+- [构建流程](#构建流程)
+- [项目结构](#项目结构)
+- [常见问题](#常见问题)
+- [最佳实践](#最佳实践)
 
+---
+
+## 项目简介
+
+<div align="center">
+
+**HybridCLR + YooAsset + UniTask 集成解决方案** 是一个专为 Unity 开发者设计的高性能热更新与资源管理框架。通过将三个业界领先的框架完美整合，为您的项目提供企业级的热更新能力。
+
+**基于 Unity 2022.3.62f2c1、HybridCLR 8.2.0、YooAsset 2.3.9、UniTask 2.5.10 版本进行整合**
+
+</div>
+
+### 核心特性
+
+- **完整的热更新能力** - 基于 HybridCLR 的完整 C# 热更新解决方案
+- **专业的资源管理** - 使用 YooAsset 实现高效的资源打包与加载
+- **高性能异步编程** - 借助 UniTask 提供卓越的异步操作性能
+- **一体化工具链** - 完整的编辑器集成与自动化构建流程
+
+### 框架优势对比
+
+| 框架组件 | 功能描述 | 核心优势 |
+|---------|---------|---------|
+| **HybridCLR** | 完整的 C# 热更新解决方案 | 支持 IL2CPP 环境下的动态代码执行 |
+| **YooAsset** | 专业的资源管理系统 | 高效的 AssetBundle 管理与加载 |
+| **UniTask** | 高性能异步编程框架 | 零分配异步操作，提升性能 |
+
+---
+
+## 核心概念
 
 ### Assembly-CSharp.dll
 
-`Assembly-Csharp`为Unity自动整合的dll,在Unity工程中任何没有被单独编译的代码都会被整合进这个`Assembly-CSharp.dll`中
-
-
+`Assembly-CSharp` 为 Unity 自动整合的 DLL，在 Unity 工程中任何没有被单独编译的代码都会被整合进这个 `Assembly-CSharp.dll` 中。
 
 ### Assembly Definition
 
-`Assembly Definition`是Unity2017.3以后出的一个功能,主要在于解决庞大的程序集编译时效问题
+`Assembly Definition` 是 Unity 2017.3 以后推出的功能，主要解决庞大程序集的编译时效问题。
 
-在Assets目录下任意一个文件夹创建一个`Assembly Definition`,会使得该文件夹下所有的代码单独编译成一个dll,并且修改该文件夹下代码时,只会重新编译该dll,而不会重新编译`Assembly-CSharp.dll`
+在 Assets 目录下任意文件夹创建 `Assembly Definition`，会使该文件夹下所有代码单独编译成 DLL，修改该文件夹下代码时，只会重新编译该 DLL，而不会重新编译 `Assembly-CSharp.dll`。
 
-当我们划分AOT程序集以及热更新程序集时,可以用到该功能
-
-
-
-### AOT与热更新程序集
+### AOT 与热更新程序集
 
 #### 热更新程序集
 
-热更新程序集理论上可以是`Assembly-CSharp`程序集,但是为了保证项目逻辑清晰,资源管理方便,当前框架使用`AssemblyDefinition`划分单独的dll作为热更新程序集,热更新assembly不应该被il2cpp处理并且编译到最终的包体里。
+热更新程序集理论上可以是 `Assembly-CSharp` 程序集，但为保证项目逻辑清晰、资源管理方便，当前框架使用 `AssemblyDefinition` 划分单独的 DLL 作为热更新程序集。热更新 Assembly 不应被 IL2CPP 处理并编译到最终包体中。
 
-HybridCLR处理了`IFilterBuildAssemblies`回调, 将热更新dll从`build assemblies`列表移除
+HybridCLR 处理了 `IFilterBuildAssemblies` 回调，将热更新 DLL 从 `build assemblies` 列表移除。
 
+#### AOT 程序集
 
+AOT 程序集是随包一起打出，不会被更新的代码。在当前框架定义下，`Assembly-CSharp` 为主 AOT 程序集，使用 `AssemblyDefinition` 划分其他 AOT 程序集。
 
-#### AOT程序集
-
-AOT程序集是随包一起打出,不会被更新的代码
-
-在当前仓库定义下,`Assembly-CSharp`为主AOT程序集,用`AssemblyDefinition`划分其他AOT程序集
-
-把`Assembly-CSharp`作为AOT程序集时强烈建议关闭热更新程序集的`auto reference`选项。因为`Assembly-CSharp`是最顶层assembly,它会自动引用剩余所有assembly,很容易就出现失误引用热更新程序集的情况。
-
-
+将 `Assembly-CSharp` 作为 AOT 程序集时强烈建议关闭热更新程序集的 `auto reference` 选项，因为 `Assembly-CSharp` 是最顶层 Assembly，会自动引用剩余所有 Assembly，容易出现失误引用热更新程序集的情况。
 
 ### UniTask
 
-UniTask是Github上的开源库,为Unity提供一个高性能异步方案,可以代替协程实现异步操作,同时兼容Unity生命周期,使得Awake,Start,协程等方法都可以异步执行,但是仍然运行在主线程上
+UniTask 是 GitHub 上的开源库，为 Unity 提供高性能异步解决方案，可以代替协程实现异步操作，同时兼容 Unity 生命周期，使得 Awake、Start、协程等方法都可以异步执行，但仍运行在主线程上。
+
+### 热更新 DLL 的加载
+
+HybridCLR 官方推荐将代码直接挂载在预制体上，通过 AssetBundle 加载预制体的方法进行热更新加载。也可以通过从加载的热更新 DLL 中直接反射出热更新类并使用 AddComponent 方法挂载到物体上实现热更新。无论哪种方式，都需要在加载预制体或加载类之前，提前加载好热更新的 DLL。
 
 
+---
 
-### 热更新DLL的加载
+## 环境准备
 
-HybridCLR官方推荐直接代码直接挂载在预制体上,通过AssetBundle加载预制体的方法进行加载热更新,但是也可以通过从加载的热更新dll中直接反射出热更新类并AddComponent方法挂载到这个物体上,以实现热更新,无论哪种方式,都需要在加载预制体或者加载类之前,提前加载好热更新的Dll
+### 系统要求
 
+- **Unity 版本**: 2022.3 LTS 或更高
+- **目标平台**: Android、iOS、Windows 及其他主流平台
+- **开发环境**: Visual Studio 2019+ 或 Rider
+- **推荐配置**: 8GB+ 内存，SSD 存储
 
+### 安装步骤
 
-### HybridCLR打包流程
+1. **安装 Unity 2022.3 LTS**
+   - 从 Unity Hub 下载并安装最新的 LTS 版本
+   - 确保包含 Android/iOS 构建支持
 
-需要在HybridCLR-Settings中将所有热更新的`AssemblyDefinition`加入列表`hotUpdateAssemblyDefinitions`|`hotUpdateAssemblies`
+2. **通过 Package Manager 安装以下包**:
+   - HybridCLR - 热更新核心框架
+   - YooAsset - 资源管理系统
+   - UniTask - 高性能异步编程
 
-`hotUpdateAssemblyDefinitions`和`hotUpdateAssemblies`合并后构成最终的热更新dll列表。同一个assembly不要在两个列表中同时出现,会报错！
+3. **配置 HybridCLR 环境**
+   - 设置 HybridCLR 运行时环境
+   - 配置热更新程序集路径
 
+---
 
+## 快速开始
 
-`HybridCLR.Editor`程序集提供了`HybridCLR.Editor.Commands.CompileDllCommand.CompileDll(BuildTarget target)`接口, 方便开发者灵活地自行编译热更新dll。编译完成后的热更新dll会自动的放到 `{project}/HybridCLRData/HotUpdateDlls/{platform}` 目录下。
+### 初始配置
 
+#### 1. 创建热更新程序集
 
+在项目中创建 Assembly Definition 文件用于热更新代码：
 
-在打包AssetBundle前,应将热更新DLL作为RawFile放入可被`YooAsset.AssetBundleCollector`收集的目录下
-
-虽然 `{project}/HybridCLRData/HotUpdateDlls/{platform}`目录下有许多Dll,但是只需要拷贝我们在HybridCLR-Settings中配置的DLL到`YooAsset.AssetBundleCollector`目录下即可
-
-
-
-HybridCLR在每次出包时,需要编译热更新代码,执行`CompileDll-ActivityTarget`打包出DLL,修改后缀名后,作为RawFile打包
-
-
-
-### 初次运行工程
-
-1. 执行`HybridCLR-Installer`安装HybridCLR环境,并执行Gemerate-All
-2. 在`YooAsset-AssetBundleCollector`中配置资源与代码包
-3. 通过`Project-Create-ScriptableObject`创建`HybridBuilderSettings`与`HybridRuntimeSettings`
-4. 在StartScene的Boot物体上,配置`YooAsset运行模式`,如果是`HostPlayMode`,则需要添加`HybridRuntimeSettings`
-5. 通过`顶部菜单栏-HybridTool-HybridBuilder`进行打包配置,并进行打包
-
-## HybridTool
-
-因为YooAssets和HybridCLR都是通过UnityPackageManager加载的,导致很多代码不够好用又无法修改,所以通过编辑器代码写了一套整合工具,使得两个第三方库可以配合的更好
-
-### 验证元数据是否需要补充
-
-通过对比AOTDLL和HotUpdateDLL得出AOTDLL是否需要补充元数据
-
-该方法不会自动发AOTDLL生成或HotUpdateDLL生成,因此如果要用于测试,仅代表当前的状态
-
-### 打APK包
-
-测试打APK流程
-
-在打APK前会先执行
-
-```
-//如果是生成代码，则只需要更新AOT和热更新代码即可
-Il2CppDefGeneratorCommand.GenerateIl2CppDef();
-//由于该方法中已经执行了生成热更新dll，因此无需重复执行生成热更新DLL
-LinkGeneratorCommand.GenerateLinkXml();
-    
-//补全热更新预制体依赖
-BuildHelper.SupplementPrefabDependent();
+```csharp
+// HotUpdate.asmdef
+{
+    "name": "HotUpdate",
+    "references": ["AOTPublic"],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
 ```
 
+#### 2. 配置 HybridCLR 设置
 
+在 HybridCLR Settings 中配置热更新程序集：
 
-### 获取需要补充元数据的DLL
-
-先执行`CompileDllCommand.CompileDllActiveBuildTarget`获取当前最新的热更新代码,随后通过对比当前`HybridCLRData/AssembliesPostIl2CppStrip`目录下的AOTDLL,获取需要补充元数据的AOTDLL名称列表,并写入`HybridCLRSettings`中
-
-由于`HybridCLRData/AssembliesPostIl2CppStrip`目录下的AOTDLL需要通过打包得到,因此仅代表执行该方法时,需要补充元数据的AOTDLL
-
-
-
-### 生成AOT补充文件并复制进文件夹
-
-按顺序执行以下命令后,将AOTDLL复制到指定目录
-
-```
-//先生成AOT文件
-Il2CppDefGeneratorCommand.GenerateIl2CppDef();
-LinkGeneratorCommand.GenerateLinkXml();
-StripAOTDllCommand.GenerateStripedAOTDlls();
+```csharp
+// 在 HybridCLR Settings 中添加热更新程序集
+HotUpdateAssemblies = new List<string> { "HotUpdate" }
 ```
 
-由于`GenerateStripedAOTDlls`会导致一次打包动作,因此获得AOTDLL应和打包APK时一致
+#### 3. 设置 YooAsset 资源收集规则
 
+配置 AssetBundle 收集规则，确保热更新资源正确打包。
 
+### 基本使用
 
-### 生成热更新Dll并复制进文件夹
+本部分介绍如何使用HybridBuilderWindow进行资源打包和HybridLauncher进行运行时加载。
 
-同上
+#### 1. 使用HybridBuilderWindow打包
 
+HybridBuilderWindow是编辑器工具，用于配置和触发资源打包流程。打包包括资产包和脚本包。
 
+##### 打开HybridBuilderWindow
 
-### 补全热更新预制体依赖
+在Unity编辑器中，点击菜单栏：`HybridTool/Hybrid Builder` 打开窗口。
 
-通过反射HotUpdateAssets目录下所有的预制体身上的组件,以及组件的属性,来补充Link.xml,以避免部分非直接引用的类型被裁剪的问题
+##### 配置打包设置
 
+1. 选择HybridBuilderSetting：窗口中会列出项目中所有的HybridBuilderSetting文件，选择要使用的配置。
+2. 选择HybridRuntimeSetting：选择运行时设置文件，该文件定义了资源包和版本信息。
+3. 选择打包选项：可以选择打包资产、脚本或全部。
 
+##### 执行打包
 
-## HybridBuilderWindow
+点击"构建"按钮开始打包。打包过程会自动处理以下步骤：
+- 验证元数据补充需求
+- 编译热更新DLL
+- 生成AOT元数据
+- 打包AssetBundle资源
 
-重写基于UIToolKit的`YooAsset.AssetBundleBuilderWindow`,并增加了一些有关代码打包的设置项
+打包完成后，资源包将输出到配置的目录中，准备部署。
 
-实现类为`HybridBuilderWindow`类,UIToolKit资产为`HybridBuilderWIndow`
+#### 2. 使用HybridLauncher加载
 
-除ToolBar之外的所有内容均来自`HybridBuildPipeViewerBase`
+HybridLauncher是运行时组件，负责初始化资源系统并加载热更新内容。
 
+##### 初始化HybridLauncher
 
+在场景中创建一个GameObject并附加HybridLauncher脚本。设置以下参数：
+- `PlayMode`: 资源系统运行模式（如编辑器模拟模式、主机模式等）
+- `RuntimeSettingsPath`: （可选）远程RuntimeSettings文件的URL，用于动态加载配置
 
-###  ToolBar
+##### 加载流程
 
-第一个枚举类型为工程中所有的`HybirdBuilderSettings`对象
+HybridLauncher在启动时自动执行以下步骤：
 
-第二个枚举类型为工程中所有的`HybridRuntimeSettings`对象
+1. **加载HybridRuntimeSettings**：如果PlayMode是主机模式，将从RuntimeSettingsPath加载运行时设置；否则使用本地配置。
+2. **初始化YooAsset资源系统**：根据设置初始化资源包。
+3. **加载AOT元数据**：从脚本包中加载AOT DLL的元数据，为热更新泛型函数提供支持。
+4. **加载热更新程序集**：从脚本包中加载热更新DLL，并反射加载到应用程序域中。
 
-通过配置不同的`HybirdBuilderSettings`和`HybridRuntimeSettings`,可以灵活的配置打包结构
+##### 代码示例
 
+```csharp
+// HybridLauncher会自动处理加载流程，无需额外代码。
+// 确保HybridLauncher组件在场景中，并正确配置参数。
+```
 
+##### 注意事项
 
-### HybridRuntimeSettings
+- 在编辑器模式下，可以使用模拟模式加速开发。
+- 在生产环境中，确保RuntimeSettingsPath指向正确的远程配置。
+- 热更新DLL和资源包需要先通过HybridBuilderWindow打包并部署到服务器。
 
-包含HostServiceIP,需要加载的包名列表,以及对应的版本
+这样，您就完成了从打包到加载的完整流程。
 
-在`HybridScriptableBuildPipelineViewer`成功构建后,序列化为JSON格式并写入到`RuntimeSettingsPath`路径下
+---
 
-用于加载一部分Runtime需要用到的设置
+## 集成工具
 
+### HybridTool 整合工具
 
+由于 YooAsset 和 HybridCLR 都是通过 Unity PackageManager 加载的，导致很多代码不够好用又无法修改，因此通过编辑器代码写了一套整合工具，使两个第三方库可以更好地配合工作。
 
-### BuildVersion
+#### 主要功能
 
-虽然可以通过旁边的Toggle切换两种版本的显示,实际上在构建时使用到的版本均是`HybirdBuilderSettings`中的版本
+| 功能模块 | 功能描述 | 使用场景 |
+|---------|---------|---------|
+| **验证元数据补充需求** | 对比 AOT 与热更新 DLL | 打包前检查 |
+| **APK 打包流程** | 自动化打包与依赖分析 | 完整构建流程 |
+| **AOT 元数据生成** | 自动生成补充文件 | 解决裁剪问题 |
+| **热更新 DLL 编译** | 编译生成热更新代码 | 开发阶段 |
+| **预制体依赖补全** | 自动补全 link.xml | 解决组件引用问题 |
 
-该界面只用于预览版本,实际上无论如何选择,都将使用HybridBuilderSeetings中的版本打包
+### HybridBuilderWindow
 
+基于 **UI Toolkit** 的现代化打包工具窗口，重写了 YooAsset.AssetBundleBuilderWindow，并增加了代码打包相关设置项。
 
+#### 核心组件
 
-### ScriptPackage & AsssetPakcage
+- **HybridBuilderWindow** - 窗口主控制器
+- **HybridBuilderWindow.uxml** - UI 布局定义文件  
+- **HybridBuildPipeViewerBase** - 核心功能实现基类
 
-由于YooAsset新版本加载RawFile需要RawFileBuildPipeline打包,因此最少需要区分两个不同的AssetBundle,一个用于打包资产,一个用于打包脚本
+### HybridScriptableBuildPipeline
 
-当项目中少于2个Packages,会导致报错
+主要打包逻辑在 HybridScriptableBuildPipelineViewer 中实现，仅在运行时对打包 Asset 或 Script 进行区分。
 
-![Packages](README/Packages.png)
+#### 对 YooAsset 打包流程的修改
 
-
-
-此处可选的Package是通过扫描整个工程得到
-
-如果打包Asset,则要求必须选中一个Package
-
-
-
-### PatchedAOTDLLFolder&HotUpdateDLLFolder
-
-此处需要注意,不要和AssetBundleCollector中其他文件夹相同,应保证独特性,需要自行检查是否真的为对应的AssetBundle打包路径
-
-该变量只用于判断打包热更新代码时,AssetBundleCollector中是否已经收集了代码的打包路径
-
-
-
-## HybrdiScriptableBuildPipeline
-
-主要打包逻辑是在`HybridScriptableBuildPipelineViewer`中实现
-
-仅在运行时对打包Asset或Script进行了区分使用`YooAsset.ScriptableBuildPipeline`还是`YooAsset.RawFileBuildPipeline`
-
-并在`RawFileBuildPipeline`的打包流程中增加了`TaskBuildScript_SBP`流程
-
-
-
-对`YooAsset`打包流程作出了一点修改
-
-1. 运行时对打包Asset或Script进行了区分使用`YooAsset.ScriptableBuildPipeline`还是`YooAsset.RawFileBuildPipeline`,由此引申出两个不同的版本,即代码版本和资源版本
-
-2. 在`RawFileBuildPipeline`的打包流程中增加了`TaskBuildScript_SBP`流程
-
-3. 通过包名列表配置一次性打多个包,并共用资源版本号
-
-4. 由于`HybridCLR`在执行`HybridCLR/Generate/AotDlls`时会导出一次工程,所以优化了打APK时的流程,当执行`BuildApplication`时,先打APK包,后打热更新代码包,这样就免去了执行`HybridCLR/Generate/AotDlls`时的导出工程操作,直接可以获得本次打包的裁剪后的`AOTDLL`
-
-5. 在`BuildScript`之前,通过判断热更新代码是否访问了被裁切代码,来判断本次是否应该打包,如果访问了被裁切代码,应该重新BuildApplication
-
-   
-
-
-
-
-
-### TaskBuildScript_SBP
-
-由于每次执行`StripAOTDllCommand.GenerateStripedAOTDlls`都会导致一次构建应用,为了避免构建时间过长
-
-正常构建热更新代码时只需要执行`CompileDllCommand.CompileDllActiveBuildTarget`获取最新的热更新DLL即可
-
-
-
-## HybridLuncher
-
-该类为重写后的启动类,主要适配了代码的初始化流程
-
-注意通过手机使用HTTP访问电脑地址时需要关闭电脑防火墙
-
-
-
-### LoadHybridRuntimeSettings
-
-通过访问`RuntimeSettingsPath`下载并反序列化`HybridRuntimeSettings`来获取一些运行时的设置
-
-
-
-### FsmInitializePackage
-
-修改了GetHostServerURL的拼接方式
-
-
-
-### GameManager
-
-当收到`ChangeToHomeScene`事件时,切换到热更新场景
-
-
-
-### LoadMetadataForAOTAssemblies
-
-从ScriptPackage中加载补充元数据程序集
-
-
-
-### LoadHotUpdateAssemblies
-
-从ScriptPackage中加载热更新程序集
-
-
-
-## 项目文件结构
+1. **运行时区分打包类型** - Asset 或 Script 使用不同的构建管道
+2. **增强 RawFileBuildPipeline** - 增加 TaskBuildScript_SBP 流程
+3. **批量打包支持** - 通过包名列表配置一次性打多个包
+4. **APK 打包优化** - 优化构建流程与错误检查
+5. **裁剪检查** - 构建前检查热更新代码是否访问了被裁切代码
+
+### HybridBuilderSettings 配置
+
+```csharp
+// 构建配置示例
+public class HybridBuilderSettings : ScriptableObject
+{
+    public HybridRuntimeSettings RuntimeSettings;
+    public List<string> AssetPackages = new List<string>();
+    public string ScriptPackageName;
+    public DefaultAsset PatchedAOTDLLFolder;
+    public DefaultAsset HotUpdateDLLFolder;
+    public int ReleaseBuildVersion;
+    public int AssetBuildVersion;
+    public int ScriptBuildVersion;
+    public bool isClearBuildCache;
+}
+```
+
+### HybridRuntimeSettings 配置
+
+```csharp
+// 运行时配置示例
+public class HybridRuntimeSettings : ScriptableObject
+{
+    public string HostServerIP;
+    public int ReleaseBuildVersion;
+    public string Packages;
+}
+```
+
+### 构建流程概览
+
+HybridCLR + YooAsset + UniTask 的构建流程分为两个主要阶段：**APK 构建阶段**和**热更新包构建阶段**。通过这种分离式设计，实现了高效的增量更新机制。
+
+#### 构建流程图
 
 ```
-📁 Project
-├── Asset
-│   ├── AOTSciprt 同时用于AOT和HotUpdateDLL使用的类
-│   ├── Editor 
-│   │   ├── BuildPipelineTask   重写后的打包流水线Task类
-│   │   └── ScriptableBuildPipeline   重写后的打包流水线
-│   ├── HotUpdateAssets  用于打成AB包的所有美术和代码资产 
-│   └── HotUpdateScripts  使用AssemblyDefition划分的热更新代码 
-├── HybridCLRData  HybridCLR生成的文件夹
-│   ├── AssembliesPostIl2CppStrip  打包后自动从Library拷贝出来的,被裁剪的AOTDLL
-│   └── HotUpdateDlls HybridCLR生成的热更新DLL
-├── Bundles  YooAsset默认打包路径
+APK 构建阶段 (稳定不变)
+├── 编译 AOT 程序集
+├── 生成桥接函数
+├── 生成裁剪后的 AOT DLL
+├── 生成 AOT 补充元数据
+└── 构建最终 APK 包
+
+热更新包构建阶段 (频繁更新)
+├── 编译热更新程序集
+├── 打包热更新 DLL
+├── 打包资源文件
+└── 生成版本信息
+```
+
+### 详细构建步骤
+
+#### 阶段一：APK 构建 (首次或重大更新时)
+
+**适用场景**：首次发布、AOT 代码变更、桥接函数变化
+
+1. **环境准备**
+   - 执行 `HybridCLR-Installer` 安装 HybridCLR 环境
+   - 执行 `Generate-All` 生成桥接函数和初始化文件
+
+2. **AOT 元数据生成**
+   ```csharp
+   // 自动执行的流程
+   Il2CppDefGeneratorCommand.GenerateIl2CppDef();
+   LinkGeneratorCommand.GenerateLinkXml();
+   StripAOTDllCommand.GenerateStripedAOTDlls();
+   ```
+
+3. **APK 构建**
+   - 构建包含 AOT 代码的 APK 包
+   - 生成裁剪后的 AOT DLL 用于后续热更新
+
+#### 阶段二：热更新包构建 (日常更新)
+
+**适用场景**：热更新代码变更、资源文件更新
+
+1. **热更新 DLL 编译**
+   ```csharp
+   // 编译热更新代码
+   CompileDllCommand.CompileDllActiveBuildTarget();
+   ```
+
+2. **资源包构建**
+   - 将热更新 DLL 作为 RawFile 打包
+   - 打包美术资源、配置文件等
+   - 生成版本控制信息
+
+3. **增量打包优化**
+   - 利用 YooAsset 的增量打包机制
+   - 仅更新变更的文件，提升构建速度
+
+### 构建决策机制
+
+#### 何时需要重新构建 APK？
+
+通过 `BuildHelper.CheckAccessMissingMetadata()` 方法判断：
+
+- **需要重新构建 APK 的情况**：
+  - 热更新代码引用了被裁剪的类型
+  - 桥接函数发生变化
+  - AOT 代码有重大变更
+
+- **仅需更新热更新包的情况**：
+  - 仅修改热更新逻辑代码
+  - 更新资源文件
+  - 修复热更新层 bug
+
+#### 桥接函数稳定性说明
+
+根据桥接函数的原理，对于固定的 AOT 部分，桥接函数集是确定的。后续无论进行任何热更新，都不会需要新的额外桥接函数。**因此不用担心热更上线后突然出现桥接函数缺失的问题。**
+
+### 初次运行工程步骤
+
+1. **环境初始化**
+   - 执行 `HybridCLR-Installer` 安装环境
+   - 执行 `Generate-All` 生成必要文件
+
+2. **资源配置**
+   - 在 `YooAsset-AssetBundleCollector` 中配置资源与代码包
+   - 创建 `HybridBuilderSettings` 与 `HybridRuntimeSettings` ScriptableObject
+
+3. **场景配置**
+   - 在 StartScene 的 Boot 物体上配置 YooAsset 运行模式
+   - 如使用 `HostPlayMode`，添加 `HybridRuntimeSettings` 引用
+
+4. **首次构建**
+   - 通过 `顶部菜单栏-HybridTool-HybridBuilder` 进行打包配置
+   - 执行完整的 APK 构建流程
+
+### 增量打包优化
+
+YooAsset 提供了高效的增量打包机制：
+
+- **Clear Build Cache** 选项控制是否清理构建缓存
+- 不勾选此项时，引擎开启增量打包模式，极大提高构建速度
+- 仅重新构建变更的资源包，避免全量构建
+
+---
+
+## 项目结构
+
+```
+Project/
+├── Assets/
+│   ├── AOTScripts/           # 同时用于AOT和HotUpdateDLL使用的类
+│   ├── Editor/               # 编辑器代码
+│   │   ├── BuildPipelineTask/ # 重写后的打包流水线Task类
+│   │   └── ScriptableBuildPipeline/ # 重写后的打包流水线
+│   ├── HotUpdateAssets/      # 用于打成AB包的所有美术和代码资产
+│   └── HotUpdateScripts/     # 使用AssemblyDefinition划分的热更新代码
+├── HybridCLRData/           # HybridCLR生成的文件夹
+│   ├── AssembliesPostIl2CppStrip/ # 打包后自动从Library拷贝出来的AOTDLL
+│   └── HotUpdateDlls/       # HybridCLR生成的热更新DLL
+├── Bundles/                 # YooAsset默认打包路径
 ├── README.md
 └── .gitignore
 ```
 
+---
 
+## 常见问题
 
-## 构建流程
+### Q: 热更新代码无法访问 AOT 代码中的泛型方法怎么办？
 
-打包前配置好`HybridLauncher.RuntimeSettingsPath` 以用于访问`HybridRuntimeSettings`
+**A:** 这是因为泛型方法需要额外的元数据支持。解决方案：
 
-由于`HybridRuntimeSettings`是存在资源服务器的JSON文件,因此后续加载路径在`HybridRuntimeSettings`中配置即可
+1. **显式调用** - 在热更新代码中显式调用该泛型方法
+2. **手动配置** - 在 link.xml 中添加相关类型的保留设置
+3. **工具辅助** - 使用整合工具的"补全热更新预制体依赖"功能
 
+### Q: 打包时提示"缺少 AOT 元数据"错误怎么办？
 
+**A:** 解决步骤：
 
-在`HybridBuilderWindow`中配置好打包参数后
+1. **验证需求** - 使用 HybridTool 中的"验证元数据是否需要补充"功能
+2. **生成文件** - 执行"生成 AOT 补充文件并复制进文件夹"操作
+3. **重新构建** - 重新构建 APK
 
-当点击HybridBuilder中的Build Button时,会执行`HybridScriptableBuildPipelineViewer.ExecuteBuild`
+### Q: 热更新代码运行时出现"方法未找到"错误怎么办？
 
-通过`HybridBuilderSetting`中的`HybridBuildOption`,来决定当前的构建流程,只要成功构建,就会将`HybridRuntimeSettings`序列化为JSON并输出在指定路径下
+**A:** 可能原因及解决方案：
 
+- **版本不匹配** - 确保热更新 DLL 和 AOT 元数据版本一致
+- **配置问题** - 检查 link.xml 配置是否正确
+- **重新构建** - 重新构建 APK 以更新元数据
 
+---
 
-### 如何判断什么时候应该构建APK?
+## 最佳实践
 
-可以通过`BuildHelper.CheckAccessMissingMetadata`来判断,热更新代码是否引用了被裁减的类型
+### 程序集划分建议
 
-如果是,则需要重新生成`LinkXml`并构建APK
+#### **AOT 程序集** (稳定不变)
+- 核心业务逻辑
+- 第三方库封装
+- Unity API 抽象层
+- 接口定义
+- 数据结构
+- 事件系统
 
-桥接函数发生变化时,也需要重新构建APK
+#### **热更新程序集** (频繁更新)
+- 游戏玩法逻辑
+- UI 界面实现  
+- 配置数据解析
 
-根据桥接函数的原理，对于固定的AOT部分，桥接函数集是确定的，后续无论进行任何热更新，都不会需要新的额外桥接函数。**因此不用担心热更上线后突然出现桥接函数缺失的问题。**
+---
 
-因此,在AOT稳定的情况下,只需要更新热更新部分的代码即可
+<div align="center">
 
+## 开始使用
 
+现在您已经了解了 HybridCLR + YooAsset + UniTask 集成解决方案的全部特性！
 
-### 如何增量打包?
+**立即开始构建您的下一代热更新游戏吧！**
 
-由于YooAsset更改了增量打包的方式,因此每次打包都可以通过选项来配置是否增量打包
+---
 
-**Clear Build Cache**
+*该文档基于AI生成*
 
-清理构建缓存，将会重新构建所有资源包。
+*如有问题，请参考上一代文档或提交 Issue*  
 
-当不勾选此项的时候，引擎会开启增量打包模式，会极大提高构建速度！
+*Happy Coding!*
 
-
-
-
-
-## 代码裁剪补充说明
-
-### Unity的代码裁剪
-
-Unity代码裁剪工具会分析项目中的程序集,查找和删除未使用的代码. 裁剪掉没有使用到的代码
-
-### link.xml
-
-Unity提供了一个方式来告诉Unity引擎,哪些类型是不能够被剪裁掉的。具体做法就是在Unity工程的Assets目录中建立一个叫link.xml的XML文件,然后按照下面的格式指定你需要保留的类型：
-
-```
-<linker>
-  <assembly fullname="UnityEngine" preserve="all"/>
-  <assembly fullname="Assembly-CSharp">
-    <namespace fullname="MyGame.Utils" preserve="all"/>
-    <type fullname="MyGame.SomeClass" preserve="all"/>
-  </assembly>  
-</linker>
-```
-
-### HybridCLR生成的link.xml
-
-HybridCLR自带的生成工具可以自动引用热更新及AOT代码中的类,并添加到link.xml中,但是无法获取热更新预制体身上已挂在的,但没有在代码中显式调用的组件
-
-例如：假设一个热更新的预制体上挂载了Animator组件,那么AnimationClip类会被裁剪掉,或者预制体挂载了Rigibody组件,那么PhysicsMaterial类会被裁剪掉,并报出一个错误,提示你关闭代码裁剪
-
-### 整合工具-补全热更新预制体依赖
-
-该方法会遍历特定路径下,所有的后缀名为prefab的物体,并获取它们身上的组件,再从组件中获取属性,如果属性为Unity对象类型,则再获取一次属性,之所以需要再获取一次属性,是因为AnimationClip类在Animator中没有直接被引用,而是在RuntimeAnimator中引用,所以需要获取两层引用,具体获取几次,需要按照项目的需要进行改动
-
-接着读取HybridCLR生成的link.xml,添加之前没有被添加过的程序集和类名
-
-并存入Assets/link.xml路径,此时,项目中有两个link.xml,Assets路径下的link.xml包含了HybridCLR生成的类型,所以可以将原本的删除
-
-如果不删除的话,Unity也会自动合并link.xml
-
-通过该方法,可以解决一部分预制体挂载组件没有被显式调用导致被裁剪的问题
-
-### 代码裁剪补全方式的选择
-
-https://docs.unity.cn/cn/2020.3/Manual/ManagedCodeStripping.html
-
-代码裁剪补全大概有四种方式
-
-1. 打包后查看报错,在Unity官方文档中查找对应的类型,再在热更新代码中显式调用对应类型,使用HybridCLR-Generate-link.xml来生成
-
-这种方式对包体影响最小,可以达到最小化的包体,但是还是可能因为组件的引用问题,导致需要多次打包查看报错
-
-2. 打包后查看报错,在Unity官方文档中查找对应的类型,再直接修改`HybridCLR`已生成的`link.xml`
-
-这种方式基本等同与上个方式,但是不需要在代码中添加额外的引用,可以更简洁
-
-3. 直接关闭代码裁剪,会导致包体大5M左右,这种方式最方便
-4. 使用整合工具-补全热更新预制体依赖,这种方式可以在AOT更新前,人为的将所有没有被HybridCLR引用的组件和类添加到link.xml中,在我的测试中,包体大概大了400K左右,大概处于较方便,且对包体影响较小,还能保持代码的简洁,缺点就是可能会添加很多无用的类进link.xml中,且需要根据项目手动的修改方法
-
-## 相关仓库
-
-### HybridCLR
-
-https://github.com/focus-creative-games/hybridclr
-
-### YooAsset
-
-https://github.com/tuyoogame/YooAsset
-
-### UniTask
-
-https://github.com/Cysharp/UniTask
+</div>
