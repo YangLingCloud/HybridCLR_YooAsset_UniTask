@@ -4,9 +4,11 @@ using System.IO;
 using System.Linq;
 using HybridCLR.Editor;
 using HybridCLR.Editor.Commands;
+using Newtonsoft.Json;
 using NUnit.Framework;
 using UnityEditor;
 using UnityEngine;
+using YooAsset.Editor;
 
 namespace HybridCLR.Tests.Editor
 {
@@ -440,6 +442,140 @@ namespace HybridCLR.Tests.Editor
             Assert.IsTrue(result,
                 "CheckAccessMissingMetadata should pass after Generate/All. " +
                 "If this fails, the Generate/All prerequisite chain may be incomplete.");
+        }
+
+        #endregion
+
+        #region VersionLogic
+
+        /// <summary>
+        /// 验证版本自增后 GetCurrentVersion 输出正确递增。
+        /// </summary>
+        [Test]
+        public void VersionLogic_IncrementUpdatesCurrentVersion()
+        {
+            var settings = RequireBuilderSettingsOrInconclusive();
+            var oldRelease = settings.ReleaseBuildVersion;
+            var oldAsset = settings.AssetBuildVersion;
+            var oldScript = settings.ScriptBuildVersion;
+            try
+            {
+                settings.ReleaseBuildVersion = 1;
+                settings.AssetBuildVersion = 2;
+                settings.ScriptBuildVersion = 3;
+
+                Assert.AreEqual("1_2_3", settings.GetCurrentVersion(true));
+
+                settings.AssetBuildVersion++;
+                settings.ScriptBuildVersion++;
+                Assert.AreEqual("1_3_4", settings.GetCurrentVersion(true));
+            }
+            finally
+            {
+                settings.ReleaseBuildVersion = oldRelease;
+                settings.AssetBuildVersion = oldAsset;
+                settings.ScriptBuildVersion = oldScript;
+            }
+        }
+
+        /// <summary>
+        /// 验证 GetCurrentVersion 的展示格式（isBuild=false）包含标签前缀。
+        /// </summary>
+        [Test]
+        public void VersionLogic_DisplayFormatContainsLabels()
+        {
+            var settings = RequireBuilderSettingsOrInconclusive();
+            var display = settings.GetCurrentVersion(false);
+            Assert.IsTrue(display.Contains("Realse:"), $"展示格式应包含 'Realse:' 前缀，实际: {display}");
+            Assert.IsTrue(display.Contains("AssetPakcage:"), $"展示格式应包含 'AssetPakcage:' 前缀，实际: {display}");
+            Assert.IsTrue(display.Contains("ScriptPackge:"), $"展示格式应包含 'ScriptPackge:' 前缀，实际: {display}");
+        }
+
+        /// <summary>
+        /// 验证 GetBuildOutputPath 在版本递增后输出路径同步变化。
+        /// </summary>
+        [Test]
+        public void VersionLogic_BuildOutputPathReflectsVersionChange()
+        {
+            var settings = RequireBuilderSettingsOrInconclusive();
+            var oldPath = settings.buildOutputPath;
+            var oldRelease = settings.ReleaseBuildVersion;
+            try
+            {
+                settings.buildOutputPath = "Bundles";
+                settings.ReleaseBuildVersion = 10;
+                var path1 = settings.GetBuildOutputPath();
+
+                settings.ReleaseBuildVersion = 11;
+                var path2 = settings.GetBuildOutputPath();
+
+                Assert.AreNotEqual(path1, path2, "版本递增后输出路径应不同");
+                Assert.IsTrue(path2.EndsWith("11"), $"路径末尾应为新版本号，实际: {path2}");
+            }
+            finally
+            {
+                settings.ReleaseBuildVersion = oldRelease;
+                settings.buildOutputPath = oldPath;
+            }
+        }
+
+        #endregion
+
+        #region PipelineTypeValidation
+
+        /// <summary>
+        /// 验证 HybrdiScriptableBuildPipeline 传入非法参数类型时抛出异常。
+        /// </summary>
+        [Test]
+        public void Pipeline_RejectsInvalidBuildParameterType()
+        {
+            var pipeline = new HybrdiScriptableBuildPipeline();
+            var fakeBuildParameters = new FakeBuildParameters();
+
+            Assert.Throws<Exception>(() => pipeline.Run(fakeBuildParameters, false),
+                "传入非 HybridScriptableBuildParameters 类型时应抛出异常");
+        }
+
+        #endregion
+
+        #region CopyDllEdgeCases
+
+        /// <summary>
+        /// 验证 CopyPatchedAOTDllToCollectPath 传入空路径时不崩溃。
+        /// </summary>
+        [Test]
+        public void CopyDll_PatchedAOTHandlesNullPath()
+        {
+            Assert.DoesNotThrow(() => BuildHelper.CopyPatchedAOTDllToCollectPath(null),
+                "传入 null 路径不应抛出异常");
+            Assert.DoesNotThrow(() => BuildHelper.CopyPatchedAOTDllToCollectPath(string.Empty),
+                "传入空字符串路径不应抛出异常");
+        }
+
+        /// <summary>
+        /// 验证 CopyHotUpdateDllToCollectPath 传入空路径时不崩溃。
+        /// </summary>
+        [Test]
+        public void CopyDll_HotUpdateHandlesNullPath()
+        {
+            Assert.DoesNotThrow(() => BuildHelper.CopyHotUpdateDllToCollectPath(null),
+                "传入 null 路径不应抛出异常");
+            Assert.DoesNotThrow(() => BuildHelper.CopyHotUpdateDllToCollectPath(string.Empty),
+                "传入空字符串路径不应抛出异常");
+        }
+
+        /// <summary>
+        /// 验证 CopyDllFileToByte 源目录不存在时返回空列表而非崩溃。
+        /// </summary>
+        [Test]
+        public void CopyDll_CopyDllFileToByteHandlesNonExistentDir()
+        {
+            var result = BuildHelper.CopyDllFileToByte(
+                new[] { "FakeAssembly" },
+                "/non_existent_dir_12345",
+                Path.GetTempPath());
+            Assert.IsNotNull(result, "返回值不应为 null");
+            Assert.AreEqual(0, result.Count, "源文件不存在时应返回空列表");
         }
 
         #endregion

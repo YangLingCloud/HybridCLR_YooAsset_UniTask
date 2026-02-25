@@ -518,8 +518,15 @@ HybridLauncher → GameManager → PatchOperation（8 步状态机）
 | **RuntimeSettings** | `HybridRuntimeSettings` 资产存在性、`HostServerIP` 配置 |
 | **Platform Tests** | 平台参数化测试（Windows / Android / iOS）：DLL 输出路径、AOT 裁剪路径、跨平台路径唯一性 |
 | **FirstBuildPrerequisites** | 首次构建前置验证：AOT 裁剪目录、`GenerateAll` 完整性、`MetadataCheck` 通过性 |
+| **VersionLogic** | 版本自增正确性、`GetCurrentVersion` 构建/展示双格式、版本递增后输出路径同步变化 |
+| **PipelineTypeValidation** | `HybrdiScriptableBuildPipeline` 传入非法参数类型时抛出异常 |
+| **CopyDllEdgeCases** | `CopyPatchedAOTDll` / `CopyHotUpdateDll` 空路径防御、`CopyDllFileToByte` 源目录不存在时返回空列表 |
 
 > 标记 `[Category("SlowTest")]` 的测试会实际执行构建命令，耗时较长；当活跃平台不匹配时会自动跳过。
+
+#### 测试边界说明
+
+测试仅验证本包自身功能（环境配置、Editor 方法、版本逻辑、DLL 编译拷贝等）的正确性。YooAsset 资源打包（`ScriptableBuildPipeline.Run()`）、APK 构建（`BuildHelper.BuildAPK()`）等属于第三方框架或 Unity 构建管线的职责，由各自的测试保证，不在本测试范围内。
 
 ---
 

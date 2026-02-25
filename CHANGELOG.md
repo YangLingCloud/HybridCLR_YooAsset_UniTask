@@ -5,6 +5,19 @@ All notable changes to this package are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.0.1] - 2026-02-26
+
+### Added
+
+- 新增 `VersionLogic` 测试组：版本自增正确性、`GetCurrentVersion` 构建/展示双格式、版本递增后输出路径同步变化。
+- 新增 `PipelineTypeValidation` 测试：`HybrdiScriptableBuildPipeline` 传入非法参数类型时抛出异常。
+- 新增 `CopyDllEdgeCases` 测试组：`CopyPatchedAOTDll` / `CopyHotUpdateDll` 空路径防御、`CopyDllFileToByte` 源目录不存在时返回空列表。
+
+### Changed
+
+- 更新 README.md 测试覆盖范围表格，新增 VersionLogic / PipelineTypeValidation / CopyDllEdgeCases 三组测试说明。
+- 更新 README.md 测试边界说明：明确本包测试仅验证自身功能，YooAsset 资源打包与 Unity 构建管线由各自测试保证。
+
 ## [3.0.0] - 2026-02-25
 
 ### Added
