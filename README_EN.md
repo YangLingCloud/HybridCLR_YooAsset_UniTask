@@ -2,11 +2,11 @@
 
 <div align="center">
 
-[![Unity 2022.3](https://img.shields.io/badge/Unity-2022.3-brightgreen)](https://unity.com/) [![HybridCLR](https://img.shields.io/badge/HybridCLR-v8.2.0-blue)](https://github.com/focus-creative-games/hybridclr) [![YooAsset](https://img.shields.io/badge/YooAsset-v2.3.9-orange)](https://github.com/tuyoogame/YooAsset) [![UniTask](https://img.shields.io/badge/UniTask-v2.5.10-purple)](https://github.com/Cysharp/UniTask) [![License](https://img.shields.io/badge/License-MIT-green)](LICENSE) [![中文](https://img.shields.io/badge/中文-文档-red)](https://github.com/YangLingCloud/HybridCLR_YooAsset_UniTask/blob/main/README.md)
+[![Unity 2022.3](https://img.shields.io/badge/Unity-2022.3-brightgreen)](https://unity.com/) [![HybridCLR](https://img.shields.io/badge/HybridCLR-v8.2.0-blue)](https://github.com/focus-creative-games/hybridclr) [![YooAsset](https://img.shields.io/badge/YooAsset-v2.3.9-orange)](https://github.com/tuyoogame/YooAsset) [![UniTask](https://img.shields.io/badge/UniTask-v2.5.10-purple)](https://github.com/Cysharp/UniTask) [![License](https://img.shields.io/badge/License-MIT-green)](LICENSE) [![中文](https://img.shields.io/badge/中文-文档-red)](./README.md)
 
-**Professional Unity Hot Update and Resource Management Integrated Solution**
+**Professional Unity Hot-Update & Resource Management Integrated Solution (Pure UPM Package)**
 
-*Enterprise-grade Hot Update Framework · High-performance Resource Management · Modern Asynchronous Programming*
+*Enterprise-grade hot-update framework · High-performance resource management · Modern async programming*
 
 </div>
 
@@ -14,42 +14,76 @@
 
 ## Table of Contents
 
-- [Project Introduction](#project-introduction)
+- [Overview](#overview)
+- [Major Changes](#major-changes)
 - [Core Concepts](#core-concepts)
-- [Environment Setup](#environment-setup)
+- [Installation & Dependencies](#installation--dependencies)
 - [Quick Start](#quick-start)
 - [Integration Tools](#integration-tools)
-- [Build Process](#build-process)
+- [Build Workflow](#build-workflow)
+- [Editor Menus](#editor-menus)
 - [Project Structure](#project-structure)
+- [Sample Guide](#sample-guide)
+- [Testing](#testing)
 - [FAQ](#faq)
 - [Best Practices](#best-practices)
 
 ---
 
-## Project Introduction
+## Overview
 
-<div align="center">
+**HybridCLR + YooAsset + UniTask Integrated Solution** is a high-performance hot-update and resource management framework designed for Unity developers. By combining three industry-leading frameworks into a unified toolchain, it provides enterprise-grade hot-update capabilities:
 
-**HybridCLR + YooAsset + UniTask Integrated Solution** is a high-performance hot update and resource management framework specifically designed for Unity developers. By perfectly integrating three industry-leading frameworks, it provides enterprise-level hot update capabilities for your projects.
+- Hot-update DLL compilation and copy
+- AOT metadata validation and supplement flow
+- Coordinated asset and script packaging
+- Sample snapshot import and path normalization
+- All-in-one editor build window
 
-**Integrated based on Unity 2022.3.62f2c1, HybridCLR 8.2.0, YooAsset 2.3.9, UniTask 2.5.10 versions**
+Built on **Unity 2022.3, HybridCLR 8.2.0, YooAsset 2.3.9, UniTask 2.5.10**.
 
-</div>
+### Framework Comparison
 
-### Core Features
-
-- **Complete Hot Update Capability** - Full C# hot update solution based on HybridCLR
-- **Professional Resource Management** - Efficient resource packaging and loading using YooAsset
-- **High-performance Asynchronous Programming** - Excellent asynchronous operation performance with UniTask
-- **Integrated Toolchain** - Complete editor integration and automated build process
-
-### Framework Advantages Comparison
-
-| Framework Component | Function Description | Core Advantage |
-|--------------------|---------------------|----------------|
-| **HybridCLR** | Complete C# hot update solution | Supports dynamic code execution in IL2CPP environment |
+| Component | Description | Key Advantage |
+|-----------|-------------|---------------|
+| **HybridCLR** | Complete C# hot-update solution | Dynamic code execution under IL2CPP |
 | **YooAsset** | Professional resource management system | Efficient AssetBundle management and loading |
-| **UniTask** | High-performance asynchronous programming framework | Zero-allocation async operations, performance improvement |
+| **UniTask** | High-performance async programming framework | Zero-allocation async operations |
+
+---
+
+## Major Changes
+
+### Repository Upgraded to Pure Package Layout
+
+This repository has been migrated from "Unity project + embedded package" to "pure UPM package root":
+
+```text
+.
+├── package.json
+├── Editor/
+├── Runtime/
+└── Samples~/
+```
+
+> It no longer contains Unity project folders such as `Assets/`, `ProjectSettings/`, or `Packages/`.
+
+### Installation Change
+
+Now you can use the git URL directly:
+
+```json
+"https://github.com/YangLingCloud/HybridCLR_YooAsset_UniTask.git"
+```
+
+### Migration Guide from 2.x
+
+1. Update package reference to root URL (remove `?path=` usage)
+2. Re-import `HotUpdateSample` in host projects
+3. Run sample setup menus:
+   - `Restore HybridCLR Settings from Snapshot`
+   - `Normalize Collector Paths`
+4. On first build, allow automatic `GenerateAll` prerequisite chain when prompted
 
 ---
 
@@ -57,260 +91,169 @@
 
 ### Assembly-CSharp.dll
 
-`Assembly-CSharp` is the DLL automatically integrated by Unity. Any code in the Unity project that is not separately compiled will be integrated into this `Assembly-CSharp.dll`.
+`Assembly-CSharp` is the DLL automatically assembled by Unity. Any code in a Unity project that is not separately compiled will be included in this `Assembly-CSharp.dll`.
 
 ### Assembly Definition
 
-`Assembly Definition` is a feature introduced after Unity 2017.3, mainly addressing the compilation efficiency issues of large assemblies.
+`Assembly Definition` is a feature introduced in Unity 2017.3, primarily designed to address compilation time issues with large assemblies.
 
-Creating an `Assembly Definition` in any folder under the Assets directory will cause all code in that folder to be compiled into a separate DLL. When modifying code in that folder, only that DLL will be recompiled, not the `Assembly-CSharp.dll`.
+Creating an `Assembly Definition` in any folder under Assets causes all code in that folder to be compiled into a separate DLL. When modifying code in that folder, only that DLL is recompiled, rather than the entire `Assembly-CSharp.dll`.
 
-### AOT and Hot Update Assemblies
+### AOT and Hot-Update Assemblies
 
-#### Hot Update Assemblies
+#### Hot-Update Assemblies
 
-Hot update assemblies can theoretically be the `Assembly-CSharp` assembly, but to ensure clear project logic and convenient resource management, the current framework uses `AssemblyDefinition` to divide separate DLLs as hot update assemblies. Hot update assemblies should not be processed by IL2CPP and compiled into the final package.
+While the hot-update assembly could theoretically be the `Assembly-CSharp` assembly, this framework uses `AssemblyDefinition` to create separate DLLs as hot-update assemblies for clearer project structure and easier resource management. Hot-update assemblies should not be processed by IL2CPP or compiled into the final build.
 
-HybridCLR handles the `IFilterBuildAssemblies` callback, removing hot update DLLs from the `build assemblies` list.
+HybridCLR handles the `IFilterBuildAssemblies` callback to remove hot-update DLLs from the `build assemblies` list.
 
 #### AOT Assemblies
 
-AOT assemblies are code that is packaged with the build and will not be updated. Under the current framework definition, `Assembly-CSharp` is the main AOT assembly, and `AssemblyDefinition` is used to divide other AOT assemblies.
+AOT assemblies are shipped with the build and are not updated at runtime. In this framework, `Assembly-CSharp` serves as the main AOT assembly, with other AOT assemblies separated using `AssemblyDefinition`.
 
-When using `Assembly-CSharp` as an AOT assembly, it is strongly recommended to disable the `auto reference` option for hot update assemblies. Because `Assembly-CSharp` is the top-level assembly, it automatically references all remaining assemblies, making it easy to accidentally reference hot update assemblies.
+When using `Assembly-CSharp` as an AOT assembly, it is strongly recommended to disable the `auto reference` option on hot-update assemblies, because `Assembly-CSharp` is the top-level assembly and automatically references all remaining assemblies, which can lead to accidental references to hot-update assemblies.
 
 ### UniTask
 
-UniTask is an open-source library on GitHub that provides high-performance asynchronous solutions for Unity. It can replace coroutines to implement asynchronous operations, while being compatible with Unity's lifecycle, allowing methods like Awake, Start, and coroutines to execute asynchronously, but still running on the main thread.
+UniTask is an open-source library on GitHub that provides a high-performance async solution for Unity. It can replace coroutines for async operations while remaining compatible with the Unity lifecycle, allowing methods like Awake, Start, and coroutines to execute asynchronously — all while still running on the main thread.
 
-### Hot Update DLL Loading
+### Hot-Update DLL Loading
 
-HybridCLR officially recommends directly attaching code to prefabs and loading hot updates through AssetBundle prefab loading. Alternatively, hot update classes can be reflected directly from loaded hot update DLLs and attached to objects using the AddComponent method to achieve hot updates. Regardless of the method, hot update DLLs need to be loaded in advance before loading prefabs or classes.
+HybridCLR officially recommends attaching scripts directly to prefabs and loading them via AssetBundle for hot-update loading. Alternatively, you can reflect hot-update classes from the loaded DLL and use `AddComponent` to attach them to GameObjects. Either way, the hot-update DLL must be loaded before loading prefabs or classes.
+
+### HybridCLR First-Build Prerequisite Chain
+
+When running the first build in a fresh project via `HybridBuilder`, the full prerequisite chain is required:
+
+1. Compile hot-update DLLs
+2. Generate IL2CPP definitions
+3. Generate link.xml
+4. Generate stripped AOT DLLs
+
+`HybridBuilder` will trigger `PrebuildCommand.GenerateAll()` automatically when needed.
 
 ---
 
-## Environment Setup
+## Installation & Dependencies
 
-### System Requirements
+### Requirements
 
-- **Unity Version**: 2022.3 LTS or higher
-- **Target Platforms**: Android, iOS, Windows, and other mainstream platforms
-- **Development Environment**: Visual Studio 2019+ or Rider
-- **Recommended Configuration**: 8GB+ RAM, SSD storage
+- **Unity**: 2022.3 LTS or higher
+- **Target Platforms**: Windows, Android, iOS
+- **IDE**: Visual Studio 2019+ or Rider
 
-### Installation Steps
+### Installation
 
-1. **Install Unity 2022.3 LTS**
-   - Download and install the latest LTS version from Unity Hub
-   - Ensure Android/iOS build support is included
+Add via `Package Manager → Add Package From URL`:
 
-2. **Install the following packages via Package Manager**:
-   - HybridCLR - Hot update core framework
-   - YooAsset - Resource management system
-   - UniTask - High-performance asynchronous programming
+```
+https://github.com/YangLingCloud/HybridCLR_YooAsset_UniTask.git
+```
 
-3. **Configure HybridCLR Environment**
-   - Set up HybridCLR runtime environment
-   - Configure hot update assembly paths
+### Package Dependencies
+
+Declared in `package.json` (installed automatically):
+
+- `com.code-philosophy.hybridclr` — HybridCLR hot-update core
+- `com.tuyoogame.yooasset` — YooAsset resource management
+- `com.cysharp.unitask` — UniTask async programming
+- `com.unity.scriptablebuildpipeline` — SBP build pipeline
+- `com.unity.nuget.newtonsoft-json` — JSON serialization
 
 ---
 
 ## Quick Start
 
-### Initial Configuration
+### 1. Install Package
 
-#### 1. Create Hot Update Assembly
+Install via Package Manager (see installation steps above).
 
-Create an Assembly Definition file in the project for hot update code:
+### 2. Import Samples
 
-```csharp
-// HotUpdate.asmdef
-{
-    "name": "HotUpdate",
-    "references": ["AOTPublic"],
-    "includePlatforms": [],
-    "excludePlatforms": [],
-    "allowUnsafeCode": false,
-    "overrideReferences": false,
-    "precompiledReferences": [],
-    "autoReferenced": true,
-    "defineConstraints": [],
-    "versionDefines": [],
-    "noEngineReferences": false
-}
-```
+Find `com.yanglingyun.hyu` in Package Manager and click the **Samples** tab to import:
 
-#### 2. Configure HybridCLR Settings
+- **Hot Update Sample** — Complete hot-update example
+- **Build Pipeline Tests** — Build pipeline tests
 
-Configure hot update assemblies in HybridCLR Settings:
+Imported path: `Assets/Samples/com.yanglingyun.hyu/<version>/Hot Update Sample/`
 
-```csharp
-// Add hot update assemblies in HybridCLR Settings
-HotUpdateAssemblies = new List<string> { "HotUpdate" }
-```
+### 3. Initialize Sample Settings
 
-#### 3. Set YooAsset Resource Collection Rules
+Run menus:
 
-Configure AssetBundle collection rules to ensure hot update resources are correctly packaged.
+1. `HybridTool/Sample-HotUpdateSample/Restore HybridCLR Settings from Snapshot` — Quickly import HybridCLR configuration
+2. `HybridTool/Sample-HotUpdateSample/Normalize Collector Paths` — Quickly configure AssetBundleCollectorSetting
 
-### Basic Usage
+### 4. Configure Runtime Parameters
 
-#### Initialize Framework
+Open the `HybridRuntimeSettings` asset and fill in `HostServerIP` (CDN / resource server address).
 
-```csharp
-using UnityEngine;
-using System.Threading.Tasks;
+### 5. Build
 
-public class GameLauncher : MonoBehaviour
-{
-    private async void Start()
-    {
-        // Initialize HybridCLR runtime
-        await HybridCLRHelper.InitializeAsync();
-        
-        // Load hot update assembly
-        var assembly = await HybridCLRLauncher.LoadHotUpdateAssemblyAsync("HotUpdateScripts.dll");
-        
-        // Use UniTask for asynchronous operations
-        await UniTask.Delay(TimeSpan.FromSeconds(1));
-        
-        Debug.Log("Framework initialization completed!");
-    }
-}
-```
-
-#### Hot Update Code Example
-
-```csharp
-// Hot update assembly code example
-public class HotUpdateLogic
-{
-    public static async UniTask<int> CalculateDamageAsync(int baseDamage, float multiplier)
-    {
-        // Asynchronously calculate damage
-        await UniTask.DelayFrame(1);
-        return (int)(baseDamage * multiplier);
-    }
-    
-    public static void ShowWelcomeMessage()
-    {
-        Debug.Log("Welcome to hot update functionality!");
-    }
-}
-```
+1. Run first build via `HybridTool/` menu (automatically triggers `PrebuildCommand.GenerateAll()` to generate stripped AOT DLLs)
+2. Subsequent iterations only require hot-update DLL compilation and resource packaging
 
 ---
 
 ## Integration Tools
 
-### HybridTool Integration Tool
+### HybridTool
 
-Since both YooAsset and HybridCLR are loaded through Unity PackageManager, many codes are not user-friendly and cannot be modified. Therefore, an integration tool was written through editor code to make the two third-party libraries work better together.
+Since both YooAsset and HybridCLR are loaded via Unity Package Manager, many parts of their code are not convenient to use and cannot be modified. This integration toolset was written as editor code to make the two third-party libraries work better together.
 
-#### Main Functions
+#### Key Features
 
-| Function Module | Function Description | Usage Scenario |
-|----------------|---------------------|----------------|
-| **Verify Metadata Supplement Requirements** | Compare AOT and Hot Update DLLs | Pre-build check |
-| **APK Build Process** | Automated packaging and dependency analysis | Complete build process |
-| **AOT Metadata Generation** | Automatically generate supplementary files | Solve trimming issues |
-| **Hot Update DLL Compilation** | Compile and generate hot update code | Development phase |
-| **Prefab Dependency Completion** | Automatically complete link.xml | Solve component reference issues |
+| Module | Description | Use Case |
+|--------|-------------|----------|
+| **Metadata Validation** | Compare AOT and hot-update DLLs | Pre-build check |
+| **APK Build Flow** | Automated build and dependency analysis | Full build workflow |
+| **AOT Metadata Generation** | Auto-generate supplementary files | Resolve stripping issues |
+| **Hot-Update DLL Compilation** | Compile hot-update code | Development phase |
+| **Prefab Dependency Supplement** | Auto-complete link.xml | Resolve component reference issues |
 
 ### HybridBuilderWindow
 
-Modern packaging tool window based on **UI Toolkit**, rewritten YooAsset.AssetBundleBuilderWindow, and added code packaging related settings.
+A modern build tool window based on **UI Toolkit**, rewriting YooAsset.AssetBundleBuilderWindow with additional code packaging settings.
 
 #### Core Components
 
-- **HybridBuilderWindow** - Main window controller
-- **HybridBuilderWindow.uxml** - UI layout definition file  
-- **HybridBuildPipeViewerBase** - Core functionality implementation base class
+- **HybridBuilderWindow** — Main window controller
+- **HybridBuilderWindow.uxml** — UI layout definition
+- **HybridBuildPipeViewerBase** — Core functionality base class
+
+#### Using HybridBuilderWindow
+
+In Unity Editor, open via menu: `HybridTool/Hybrid Builder`.
+
+**Configure Build Settings:**
+
+1. Select HybridBuilderSetting: the window lists all HybridBuilderSetting files in the project
+2. Select HybridRuntimeSetting: choose the runtime settings file that defines resource packages and version info
+3. Select build options: choose to build assets, scripts, or all
+
+**Execute Build:**
+
+Click the "Build" button. The build process automatically handles:
+- Metadata supplement validation
+- Hot-update DLL compilation
+- AOT metadata generation
+- AssetBundle resource packaging
 
 ### HybridScriptableBuildPipeline
 
-The main packaging logic is implemented in HybridScriptableBuildPipelineViewer, only distinguishing between packaging Assets or Scripts at runtime.
+The main build logic is implemented in HybridScriptableBuildPipelineViewer, distinguishing between Asset and Script packaging at runtime.
 
-#### Modifications to YooAsset Packaging Process
+#### Modifications to YooAsset Build Pipeline
 
-1. **Runtime Packaging Type Distinction** - Use different build pipelines for Assets or Scripts
-2. **Enhanced RawFileBuildPipeline** - Added TaskBuildScript_SBP process
-3. **Batch Packaging Support** - Configure multiple packages at once through package name list
-4. **APK Packaging Optimization** - Optimized build process and error checking
-5. **Trimming Check** - Check if hot update code accesses trimmed code before building
+1. **Runtime build type distinction** — Assets and Scripts use different build pipelines
+2. **Enhanced RawFileBuildPipeline** — Added TaskBuildScript_SBP pipeline step
+3. **Batch build support** — Configure multiple packages at once via package name list
+4. **APK build optimization** — Optimized build flow and error checking
+5. **Stripping check** — Pre-build check for hot-update code accessing stripped code
 
----
-
-## Build Process
-
-### Build Process Overview
-
-The build process for HybridCLR + YooAsset + UniTask is divided into two main stages: **APK Build Stage** and **Hot Update Package Build Stage**. Through this separation design, efficient incremental update mechanism is achieved.
-
-#### Build Process Diagram
-
-```
-APK Build Stage (Stable and Unchanging)
-├── Compile AOT Assemblies
-├── Generate Bridge Functions
-├── Generate Trimmed AOT DLLs
-├── Generate AOT Supplementary Metadata
-└── Build Final APK Package
-
-Hot Update Package Build Stage (Frequent Updates)
-├── Compile Hot Update Assemblies
-├── Package Hot Update DLLs
-├── Package Resource Files
-└── Generate Version Information
-```
-
-### Detailed Build Steps
-
-#### Stage One: APK Build (First Release or Major Updates)
-
-**Applicable Scenarios**: First release, AOT code changes, bridge function changes
-
-1. **Environment Preparation**
-   - Execute `HybridCLR-Installer` to install HybridCLR environment
-   - Execute `Generate-All` to generate bridge functions and initialization files
-
-2. **AOT Metadata Generation**
-   ```csharp
-   // Automatically executed process
-   Il2CppDefGeneratorCommand.GenerateIl2CppDef();
-   LinkGeneratorCommand.GenerateLinkXml();
-   StripAOTDllCommand.GenerateStripedAOTDlls();
-   ```
-
-3. **APK Build**
-   - Build APK package containing AOT code
-   - Generate trimmed AOT DLLs for subsequent hot updates
-
-#### Stage Two: Hot Update Package Build (Daily Updates)
-
-**Applicable Scenarios**: Hot update code changes, resource file updates
-
-1. **Hot Update DLL Compilation**
-   ```csharp
-   // Compile hot update code
-   CompileDllCommand.CompileDllActiveBuildTarget();
-   ```
-
-2. **Resource Package Build**
-   - Package hot update DLLs as RawFile
-   - Package art resources, configuration files, etc.
-   - Generate version control information
-
-3. **Incremental Packaging Optimization**
-   - Utilize YooAsset's incremental packaging mechanism
-   - Only update changed files, improving build speed
-
-### Build Configuration Management
-
-#### HybridBuilderSettings Configuration
+### HybridBuilderSettings Configuration
 
 ```csharp
-// Build configuration example
 public class HybridBuilderSettings : ScriptableObject
 {
     public HybridRuntimeSettings RuntimeSettings;
@@ -325,10 +268,9 @@ public class HybridBuilderSettings : ScriptableObject
 }
 ```
 
-#### HybridRuntimeSettings Configuration
+### HybridRuntimeSettings Configuration
 
 ```csharp
-// Runtime configuration example
 public class HybridRuntimeSettings : ScriptableObject
 {
     public string HostServerIP;
@@ -337,135 +279,316 @@ public class HybridRuntimeSettings : ScriptableObject
 }
 ```
 
+---
+
+## Build Workflow
+
+The build workflow for HybridCLR + YooAsset + UniTask is divided into two main stages: **Base Package Build** and **Hot-Update Package Build**. This separation enables efficient incremental update mechanisms.
+
+### Build Flow Diagram
+
+```
+Base Package Build (Low frequency — first release or major updates)
+├── Compile AOT assemblies
+├── Generate bridge functions
+├── Generate stripped AOT DLLs
+├── Generate AOT supplementary metadata
+└── Build final APK
+
+Hot-Update Package Build (High frequency — daily updates)
+├── Compile hot-update assemblies
+├── Package hot-update DLLs
+├── Package resource files
+└── Generate version info
+```
+
+### Stage 1: Base Package Build
+
+**Applicable scenarios**: First release, AOT code changes, bridge function changes
+
+1. **Environment Setup**
+   - Run `HybridCLR-Installer` to install the HybridCLR environment
+   - Run `Generate-All` to generate bridge functions and initialization files
+
+2. **AOT Metadata Generation**
+   ```csharp
+   // Automatically executed flow
+   Il2CppDefGeneratorCommand.GenerateIl2CppDef();
+   LinkGeneratorCommand.GenerateLinkXml();
+   StripAOTDllCommand.GenerateStripedAOTDlls();
+   ```
+
+3. **APK Build**
+   - Build the APK containing AOT code
+   - Generate stripped AOT DLLs for subsequent hot-updates
+
+### Stage 2: Hot-Update Package Build
+
+**Applicable scenarios**: Hot-update code changes, resource file updates
+
+1. **Hot-Update DLL Compilation**
+   ```csharp
+   CompileDllCommand.CompileDllActiveBuildTarget();
+   ```
+
+2. **Resource Package Build**
+   - Package hot-update DLLs as RawFiles
+   - Package art assets, configuration files, etc.
+   - Generate version control info
+
+3. **Incremental Build Optimization**
+   - Leverage YooAsset's incremental packaging mechanism
+   - Only rebuild changed resource packages, avoiding full rebuilds
+   - `Clear Build Cache` option controls whether to clear the build cache
+
 ### Build Decision Mechanism
 
-#### When to Rebuild APK?
+Determined via `BuildHelper.CheckAccessMissingMetadata()`:
 
-Determine through `BuildHelper.CheckAccessMissingMetadata()` method:
-
-- **Situations requiring APK rebuild**:
-  - Hot update code references trimmed types
-  - Bridge functions change
+- **Cases requiring APK rebuild**:
+  - Hot-update code references stripped types
+  - Bridge functions have changed
   - Major AOT code changes
 
-- **Situations requiring only hot update package update**:
-  - Only modify hot update logic code
-  - Update resource files
-  - Fix hot update layer bugs
+- **Cases requiring only hot-update package update**:
+  - Only hot-update logic code modified
+  - Resource file updates
+  - Hot-update layer bug fixes
 
-#### Bridge Function Stability Explanation
+#### Bridge Function Stability
 
-According to the principle of bridge functions, for a fixed AOT part, the bridge function set is determined. Subsequent hot updates will not require new additional bridge functions. **Therefore, there's no need to worry about sudden bridge function missing issues after hot updates go live.**
+Based on how bridge functions work, for a fixed AOT portion, the bridge function set is deterministic. No matter what hot-updates are applied afterward, no additional bridge functions will be needed. **Therefore, there is no risk of bridge function shortages after going live with hot-updates.**
 
-### First Run Project Steps
+---
 
-1. **Environment Initialization**
-   - Execute `HybridCLR-Installer` to install environment
-   - Execute `Generate-All` to generate necessary files
+## Editor Menus
 
-2. **Resource Configuration**
-   - Configure resource and code packages in `YooAsset-AssetBundleCollector`
-   - Create `HybridBuilderSettings` and `HybridRuntimeSettings` ScriptableObject
+### Package Menus (`HybridTool/`)
 
-3. **Scene Configuration**
-   - Configure YooAsset running mode on Boot object in StartScene
-   - If using `HostPlayMode`, add `HybridRuntimeSettings` reference
+- `Check AOT Metadata` — Validate whether AOT metadata needs supplementation
+- `Build APK` — Build APK package
+- `Get Patched AOT Assembly List` — Get the list of AOT assemblies requiring supplementation
+- `Generate AOT DLLs and Copy` — Generate AOT DLLs and copy to resource directory
+- `Generate Hot-Update DLLs and Copy` — Compile hot-update DLLs and copy to resource directory
+- `Supplement Prefab Dependencies` — Supplement prefab dependencies to link.xml
 
-4. **First Build**
-   - Configure packaging through `Top Menu Bar-HybridTool-HybridBuilder`
-   - Execute complete APK build process
+### Sample Menus (`HybridTool/Sample-HotUpdateSample/`)
 
-### Incremental Packaging Optimization
-
-YooAsset provides efficient incremental packaging mechanism:
-
-- **Clear Build Cache** option controls whether to clear build cache
-- When this option is not checked, engine enables incremental packaging mode, greatly improving build speed
-- Only rebuild changed resource packages, avoiding full build
+- `Export HybridCLR Settings Snapshot` — Export current HybridCLR configuration snapshot
+- `Restore HybridCLR Settings from Snapshot` — Restore HybridCLR configuration from snapshot
+- `Normalize Collector Paths` — Normalize YooAsset collector paths
 
 ---
 
 ## Project Structure
 
+```text
+.
+├── package.json                # UPM package definition
+├── Editor/                     # Editor tool code
+│   ├── BuildHelper.cs          # Build helper utilities
+│   ├── HybridBuilderWindow.cs  # Build window main controller
+│   ├── HybridBuilderSettings.cs # Build configuration definition
+│   ├── HybridBuildPipeViewerBase.cs # Build pipeline base class
+│   ├── HybridScriptableBuildPipelineViewer.cs # SBP build pipeline
+│   ├── BuildPipelineTask/      # Rewritten build pipeline tasks
+│   └── ScriptableBuildPipeline/ # Rewritten build pipeline
+├── Runtime/                    # Runtime code
+│   └── HybridRuntimeSettings.cs # Runtime config (CDN address, version, etc.)
+└── Samples~/                   # Importable samples
+    ├── HotUpdateSample/        # Complete hot-update sample
+    │   ├── Editor/             # Sample editor tools
+    │   ├── HotUpdateScripts/   # Hot-update assembly
+    │   └── Settings/           # Configuration files
+    └── BuildTests/             # Build pipeline tests
+        └── Editor/HybridBuildPipelineTests.cs
 ```
-Project/
-├── Assets/
-│   ├── AOTScripts/           # Classes used by both AOT and HotUpdateDLL
-│   ├── Editor/               # Editor code
-│   │   ├── BuildPipelineTask/ # Rewritten build pipeline Task classes
-│   │   └── ScriptableBuildPipeline/ # Rewritten build pipeline
-│   ├── HotUpdateAssets/      # All art and code assets for AB packaging
-│   └── HotUpdateScripts/     # Hot update code divided by AssemblyDefinition
-├── HybridCLRData/           # HybridCLR generated folders
-│   ├── AssembliesPostIl2CppStrip/ # AOTDLLs automatically copied from Library after build
-│   └── HotUpdateDlls/       # HybridCLR generated hot update DLLs
-├── Bundles/                 # YooAsset default packaging path
-├── README.md
-└── .gitignore
+
+---
+
+## Sample Guide
+
+This package provides two importable samples: **HotUpdateSample** (hot-update example) and **BuildTests** (build tests).
+
+### HotUpdateSample — Complete Hot-Update Example
+
+A ready-to-use hot-update demo project covering the complete flow from resource download to hot-update code execution.
+
+#### Directory Structure
+
+```text
+HotUpdateSample/
+├── AOTScripts/                # AOT runtime scripts (shipped with base build, not hot-updatable)
+│   ├── AOTPublic.asmdef
+│   ├── HttpHelper.cs          # HTTP utility class
+│   └── SampleBundleEncryption.cs  # YooAsset bundle encryption example
+├── Editor/                    # Editor import tools
+│   ├── HybridCLRSettingsSnapshot.json  # HybridCLR preset configuration snapshot
+│   └── HybridSettingsImporter.cs       # Auto/manual settings importer
+├── EventDefine/               # UniEvent event definitions
+│   ├── BattleEventDefine.cs
+│   ├── PatchEventDefine.cs    # Hot-update flow events
+│   ├── SceneEventDefine.cs
+│   └── UserEventDefine.cs
+├── HotUpdateAssets/           # Resources to be packed into AssetBundles
+│   ├── HotUpdateDll/          # Compiled hot-update DLL directory
+│   ├── PatchedAOTDLL/         # AOT supplementary metadata DLLs (.bytes format)
+│   ├── Prefabs/               # Prefabs
+│   ├── Scenes/                # Hot-update scenes
+│   ├── Textures/ Materials/ UIPrefabs/ audios/
+├── HotUpdateScripts/          # Hot-update assembly (loaded at runtime by HybridCLR)
+│   ├── HotUpdate.asmdef
+│   ├── HotUpdateLauncher.cs   # Hot-update entry script
+│   ├── LoadImage.cs           # YooAsset texture loading example
+│   ├── ModelRotate.cs         # YooAsset model loading example
+│   └── animate/Rotating.cs    # Rotation animation component
+├── PatchLogic/                # YooAsset hot-update download state machine
+│   ├── FsmNode/               # 8 FSM state nodes
+│   ├── PatchOperation.cs      # State machine dispatcher
+│   └── PatchWindow.cs         # Download progress UI controller
+├── Scripts/                   # Main scene AOT scripts
+│   ├── GameManager.cs         # Game startup manager
+│   └── HybridLauncher.cs     # HybridCLR + YooAsset launcher
+├── Settings/                  # Configuration files
+│   ├── AssetBundleCollectorSetting.asset
+│   ├── HybridBuilderSettings.asset
+│   └── HybridRuntimeSettings.asset
+└── ThirdParty/                # Built-in lightweight utility libraries
+    ├── UniEvent/              # Event bus
+    ├── UniMachine/            # Finite state machine
+    └── UniUtility/            # General utilities
 ```
+
+#### Usage Steps
+
+**Step 1: Import Sample**
+
+Find `com.yanglingyun.hyu` in Package Manager, click the **Samples** tab, and import **Hot Update Sample**.
+
+**Step 2: Automatic Initialization**
+
+When the editor is opened for the first time after import, `HybridSettingsImporter` will automatically detect the HybridCLR configuration status:
+- If the hot-update assembly list in HybridCLR Settings is empty, a dialog asks whether to restore from snapshot
+- Clicking **Restore from Snapshot** will automatically configure:
+  - `hotUpdateAssemblyDefinitions` → `[HotUpdate]`
+  - `patchAOTAssemblies` → `[UniTask, UnityEngine.CoreModule, YooAsset, mscorlib]`
+- Settings assets are automatically created and collector paths are normalized
+
+**Step 3: Manual Initialization (Optional)**
+
+If automatic initialization was not triggered, manually run the menus:
+
+1. `HybridTool/Sample-HotUpdateSample/Restore HybridCLR Settings from Snapshot`
+2. `HybridTool/Sample-HotUpdateSample/Normalize Collector Paths`
+
+**Step 4: Configure and Build**
+
+1. Fill in `HostServerIP` in `HybridRuntimeSettings`
+2. Execute build via `HybridTool/` menu
+
+#### Runtime Flow
+
+```text
+HybridLauncher → GameManager → PatchOperation (8-step state machine)
+    → Initialize YooAsset packages
+    → Request remote version number
+    → Update resource manifest
+    → Download resource packages
+    → Load AOT metadata (to support hot-update generic functions)
+    → Load hot-update DLLs (HybridCLR)
+    → Instantiate HotUpdateLauncher, enter hot-update logic
+```
+
+### BuildTests — Build Pipeline Tests
+
+An NUnit EditMode test suite for validating build configuration and pipeline correctness.
+
+#### Usage Steps
+
+1. Import **Build Pipeline Tests** sample from Package Manager
+2. Open Unity Test Runner (`Window > General > Test Runner`)
+3. Test assembly `com.yanglingyun.hyu.Tests.Editor` only compiles when `UNITY_INCLUDE_TESTS` is defined
+
+#### Test Coverage
+
+| Test Category | Description |
+|---|---|
+| **BuildConfig** | HybridCLR configuration existence, hot-update/AOT assembly lists, build scene list, project path validity |
+| **BuilderSettings** | `HybridBuilderSettings` asset existence, `RuntimeSettings` association, build output path resolution, version format |
+| **RuntimeSettings** | `HybridRuntimeSettings` asset existence, `HostServerIP` configuration |
+| **Platform Tests** | Platform-parameterized tests (Windows / Android / iOS): DLL output paths, AOT stripping paths, cross-platform path uniqueness |
+| **FirstBuildPrerequisites** | First-build prerequisite validation: AOT stripping directory, `GenerateAll` completeness, `MetadataCheck` pass |
+
+> Tests marked with `[Category("SlowTest")]` actually execute build commands and take longer; they are automatically skipped when the active platform does not match.
 
 ---
 
 ## FAQ
 
-### Q: What to do when hot update code cannot access generic methods in AOT code?
+### Q1: Hot-update code cannot access generic methods in AOT code?
 
-**A:** This is because generic methods require additional metadata support. Solutions:
+This is because generic methods require additional metadata support. Solutions:
 
-1. **Explicit Call** - Explicitly call the generic method in hot update code
-2. **Manual Configuration** - Add related type retention settings in link.xml
-3. **Tool Assistance** - Use integration tool's "Complete Hot Update Prefab Dependencies" function
+1. **Explicit invocation** — Explicitly call the generic method in hot-update code
+2. **Manual configuration** — Add type preservation settings in link.xml
+3. **Tool assistance** — Use the `HybridTool/Supplement Prefab Dependencies` feature
 
-### Q: What to do when "Missing AOT Metadata" error appears during packaging?
+### Q2: "Missing AOT metadata" error during build?
 
-**A:** Solution steps:
+1. Use `HybridTool/Check AOT Metadata` to validate whether metadata needs supplementation
+2. Run `HybridTool/Generate AOT DLLs and Copy` to generate AOT supplementary files
+3. Rebuild the APK
 
-1. **Verify Requirements** - Use "Verify Metadata Supplement Requirements" function in HybridTool
-2. **Generate Files** - Execute "Generate AOT Supplementary Files and Copy to Folder" operation
-3. **Rebuild** - Rebuild APK
+### Q3: "Method not found" error at runtime in hot-update code?
 
-### Q: What to do when "Method Not Found" error occurs during hot update code runtime?
+Possible causes and solutions:
+- **Version mismatch** — Ensure hot-update DLLs and AOT metadata versions are consistent
+- **Configuration issue** — Check if link.xml configuration is correct
+- **Rebuild** — Rebuild the APK to update metadata
 
-**A:** Possible causes and solutions:
+### Q4: MetadataCheck fails on first build?
 
-- **Version Mismatch** - Ensure hot update DLL and AOT metadata versions match
-- **Configuration Issue** - Check if link.xml configuration is correct
-- **Rebuild** - Rebuild APK to update metadata
+Run the sample menu's Snapshot restore and Collector normalization first, then trigger the `GenerateAll` prerequisite chain before performing the hot-update build.
+
+### Q5: Collector paths are wrong after importing sample?
+
+Run: `HybridTool/Sample-HotUpdateSample/Normalize Collector Paths`
 
 ---
 
 ## Best Practices
 
-### Assembly Division Recommendations
+### Assembly Partitioning Recommendations
 
-#### **AOT Assemblies** (Stable and Unchanging)
+#### AOT Assemblies (Stable, infrequently changed)
 - Core business logic
-- Third-party library encapsulation
+- Third-party library wrappers
 - Unity API abstraction layer
-- Interface definitions
-- Data structures
-- Event system
+- Interface definitions and data structures
+- Event systems
 
-#### **Hot Update Assemblies** (Frequent Updates)
+#### Hot-Update Assemblies (Frequently updated)
 - Gameplay logic
-- UI interface implementation  
+- UI implementation
 - Configuration data parsing
+
+### Build Optimization Tips
+
+- Leverage YooAsset's incremental packaging — leaving `Clear Build Cache` unchecked significantly speeds up builds
+- Once the AOT portion is stable, daily iterations only require hot-update package builds
+- Bridge functions are deterministic for a fixed AOT portion — hot-updates will not introduce new bridge function requirements
+
+---
+
+## License
+
+MIT
 
 ---
 
 <div align="center">
 
-## Getting Started
-
-Now you have learned all the features of the HybridCLR + YooAsset + UniTask Integrated Solution!
-
-**Start building your next-generation hot update game now!**
-
----
-
-*This documentation is AI-generated*
-
-*If you have questions, please refer to the previous documentation or submit an Issue*  
+*If you have questions, please submit an [Issue](https://github.com/YangLingCloud/HybridCLR_YooAsset_UniTask/issues)*
 
 *Happy Coding!*
 

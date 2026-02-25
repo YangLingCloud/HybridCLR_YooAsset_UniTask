@@ -1,0 +1,37 @@
+{
+  "name": "com.yanglingyun.hyu",
+  "version": "3.0.0",
+  "displayName": "HybridCLR YooAsset UniTask Builder",
+  "description": "Unity热更新构建工具，整合HybridCLR、YooAsset和UniTask的编辑器构建流水线。提供一体化的热更新DLL编译、AOT元数据生成、资源打包等功能。",
+  "unity": "2022.3",
+  "dependencies": {
+    "com.code-philosophy.hybridclr": "8.2.0",
+    "com.tuyoogame.yooasset": "2.3.9",
+    "com.unity.scriptablebuildpipeline": "1.21.21",
+    "com.unity.nuget.newtonsoft-json": "3.2.1",
+    "com.cysharp.unitask": "2.5.10"
+  },
+  "keywords": [
+    "hybridclr",
+    "yooasset",
+    "unitask",
+    "hot-update",
+    "build-pipeline"
+  ],
+  "author": {
+    "name": "YangLingYun",
+    "url": "https://github.com/YangLingCloud"
+  },
+  "samples": [
+    {
+      "displayName": "Hot Update Sample",
+      "description": "完整的热更新示例，包含启动器、补丁逻辑、事件系统、状态机和热更新脚本。",
+      "path": "Samples~/HotUpdateSample"
+    },
+    {
+      "displayName": "Build Pipeline Tests",
+      "description": "构建流水线测试脚本，验证 Windows 和 Android 平台的 DLL 编译、AOT 元数据、资源打包等流程。通过 Unity Test Runner (EditMode) 运行。",
+      "path": "Samples~/BuildTests"
+    }
+  ]
+}

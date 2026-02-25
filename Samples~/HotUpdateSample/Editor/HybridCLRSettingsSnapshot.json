@@ -1,0 +1,14 @@
+{
+    "hotUpdateAssemblyDefinitions": [
+        "HotUpdate"
+    ],
+    "hotUpdateAssemblies": [],
+    "preserveHotUpdateAssemblies": [],
+    "externalHotUpdateAssembliyDirs": [],
+    "patchAOTAssemblies": [
+        "UniTask",
+        "UnityEngine.CoreModule",
+        "YooAsset",
+        "mscorlib"
+    ]
+}

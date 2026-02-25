@@ -1,54 +1,38 @@
-/Library
-/Logs
-/obj
-/Build
-/Temp
-/Build-Release
-/.vs
-/Build-Win64
-/Build-Android
-/copydll.bat
-/Debug
-/.idea/
-/update_unity_libil2cpp.bat
-/*.csproj
-/*.sln
-/*.user
-/UserSettings/Layouts
-/UIElementsSchema
+# IDE / OS
+.idea/
+.vs/
+.vscode/
+*.user
+*.swp
+Thumbs.db
 
-/Build-Win64-2
-/Build-Android2
-/Build-Android-2020.3.33
-/Build-Win64-2020.3.33
-/Build-Win64-2021.3.1
-/UserSettings/Layouts
-/Build-Android-2021.3.1
-/Release
-/HybridCLRData/
-/Release-Win64
-/Build-Android64
-/Build-AndroidV7
-/Assets/HybridCLRBuildCache
-/Assets/HybridCLRBuildCache.mate
-/Release-Android
-/Release-Win32
-/Build-WebGL
-/Assembly-CSharp-Editor.csproj.user
-/Build-AndroidV8
-/Build-Mac
-/Build-iOS
-/HybridCLRData
-/Packages/com.focus-creative-games.hybridclr_unity
-/UserSettings
-/Build-*/
-/Packages/packages-lock.json
+# Unity-generated caches/build artifacts (if this package is opened inside a Unity project)
+Library/
+Logs/
+Temp/
+Obj/
+Build/
+Build-*/
+UserSettings/
+MemoryCaptures/
+UIElementsSchema/
+
+# Generated solution/project files
+*.csproj
+*.sln
+*.slnx
+*.pidb
+*.booproj
+
+# Local output folders used by sample build pipeline
 Bundles/
+Release/
+Release-*/
 Sandbox/
 yoo/
 
-
-Assets/HotUpdateAssets/AOTDLL/
-Assets/HotUpdateAssets/HotUpdateDLL/
-Assets/StreamingAssets/yoo/
-Assets/Samples/YooAsset/
+# Keep this repository as a pure UPM package root.
+# If someone accidentally creates a Unity project here, ignore project-level folders.
+Assets/
+ProjectSettings/
+Packages/

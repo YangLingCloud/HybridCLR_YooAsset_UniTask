@@ -1,0 +1,34 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 07db0dba8f275934a8610be7b456aaf9, type: 3}
+  m_Name: HybridBuilderSettings
+  m_EditorClassIdentifier: 
+  RuntimeSettings: {fileID: 11400000, guid: 4107dd3a4c218484bb43db01bd18a82b, type: 2}
+  AssetPackages:
+  - SmapleAsset
+  - DefaultPackage
+  scriptPackageName: SampleScript
+  _buildOutputPath: Bundles
+  _patchedAOTDLLFolder: {fileID: 102900000, guid: 102f55701a56e2d4cb11f0bf1e5b472a, type: 3}
+  _hotUpdateDLLFolder: {fileID: 102900000, guid: f4260c78318878841b48f22e19aef9a7, type: 3}
+  _releaseBuildVersion: 29
+  _assetBuildVersion: 60
+  _scriptBuildVersion: 78
+  _isUseSelfIncrementingVersions: 1
+  _isClearBuildCache: 1
+  _isUseAssetDependDB: 1
+  _assetEncyptionClassName: FileOffsetTestEncryption
+  _assetCompressOption: 2
+  _assetFileNameStyle: 0
+  _assetBuildinFileCopyOption: 1
+  _assetBuildinFileCopyParams: 12321
+  _hybridBuildOption: 1

@@ -1,0 +1,28 @@
+{
+    "name": "com.yanglingyun.hyu.Editor",
+    "rootNamespace": "",
+    "references": [
+        "GUID:bc6f510b8c221f848b93901d9adee1ee",
+        "GUID:0676eb9abcf9f654280ff10ab50fe45b",
+        "GUID:4d1926c9df5b052469a1c63448b7609a",
+        "GUID:2373f786d14518f44b0f475db77ba4de",
+        "GUID:e34a5702dd353724aa315fb8011f08c3",
+        "GUID:c5ecc461727906345a35491a0440694f",
+        "GUID:4988cf9794f41d64c884876ab6574b89",
+        "GUID:343deaaf83e0cee4ca978e7df0b80d21",
+        "GUID:a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [
+        ""
+    ],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
