@@ -5,18 +5,25 @@ All notable changes to this package are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [3.0.1] - 2026-02-26
+## [3.0.1] - 2026-03-07
 
 ### Added
 
 - 新增 `VersionLogic` 测试组：版本自增正确性、`GetCurrentVersion` 构建/展示双格式、版本递增后输出路径同步变化。
 - 新增 `PipelineTypeValidation` 测试：`HybrdiScriptableBuildPipeline` 传入非法参数类型时抛出异常。
 - 新增 `CopyDllEdgeCases` 测试组：`CopyPatchedAOTDll` / `CopyHotUpdateDll` 空路径防御、`CopyDllFileToByte` 源目录不存在时返回空列表。
+- 新增 `version-update` Agent Skill（`.opencode/skills/version-update/SKILL.md`）：标准化版本发布流程，自动递增 patch 版本、同步 CHANGELOG / package.json / AGENTS.md，提交前询问是否推送。
+- 新增 `Samples~/HotUpdateSample/AGENTS.md`：样例级 AI 代理上下文，覆盖 FSM 架构、程序集分离、运行时启动流程及样例专属反模式。
 
 ### Changed
 
 - 更新 README.md 测试覆盖范围表格，新增 VersionLogic / PipelineTypeValidation / CopyDllEdgeCases 三组测试说明。
 - 更新 README.md 测试边界说明：明确本包测试仅验证自身功能，YooAsset 资源打包与 Unity 构建管线由各自测试保证。
+- 扩展 README.md / README_EN.md 项目结构树：补充 `README/` 目录、`SceneHelper.cs`、UXML 布局文件、asmdef 及子目录详情。
+- 扩展 README.md / README_EN.md `HybridBuilderSettings` 代码片段：从 8 个字段扩展至全部 16 个字段（含 `buildOutputPath`、YooAsset 打包选项、`hybridBuildOption` 等）。
+- README.md / README_EN.md 编辑器菜单补充 `Hybrid Builder` 条目。
+- README_EN.md 测试覆盖表格补齐 VersionLogic / PipelineTypeValidation / CopyDllEdgeCases 三组及测试边界说明（与中文版对齐）。
+- 更新根 AGENTS.md：补充 `README/` 目录、`animate/` 小写命名注记、占位 GUID 警告、文档资产维护指引。
 
 ## [3.0.0] - 2026-02-25
 

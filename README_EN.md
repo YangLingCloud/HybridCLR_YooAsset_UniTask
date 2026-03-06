@@ -256,15 +256,24 @@ The main build logic is implemented in HybridScriptableBuildPipelineViewer, dist
 ```csharp
 public class HybridBuilderSettings : ScriptableObject
 {
-    public HybridRuntimeSettings RuntimeSettings;
-    public List<string> AssetPackages = new List<string>();
-    public string ScriptPackageName;
-    public DefaultAsset PatchedAOTDLLFolder;
-    public DefaultAsset HotUpdateDLLFolder;
-    public int ReleaseBuildVersion;
-    public int AssetBuildVersion;
-    public int ScriptBuildVersion;
-    public bool isClearBuildCache;
+    public HybridRuntimeSettings RuntimeSettings;  // Associated runtime config
+    public List<string> AssetPackages;              // Asset package name list
+    public string ScriptPackageName;                // Script package name
+    public DefaultAsset PatchedAOTDLLFolder;        // AOT supplementary metadata DLL directory
+    public DefaultAsset HotUpdateDLLFolder;         // Hot-update DLL directory
+    public int ReleaseBuildVersion;                 // Release version number
+    public int AssetBuildVersion;                   // Asset build version number
+    public int ScriptBuildVersion;                  // Script build version number
+    public string buildOutputPath;                  // Build output path (supports relative paths)
+    public bool isClearBuildCache;                  // Whether to clear build cache
+    public bool isUseAssetDependDB;                 // Use asset dependency DB (speeds up build)
+    public bool isUseSelfIncrementingVersions;      // Use auto-incrementing version numbers
+    public ECompressOption assetCompressOption;     // AB compression option
+    public EFileNameStyle assetFileNameStyle;       // AB file naming style
+    public string assetEncyptionClassName;          // AB encryption class name
+    public EBuildinFileCopyOption assetBuildinFileCopyOption; // Built-in file copy option
+    public string assetBuildinFileCopyParams;       // Copy option parameters
+    public HybridBuildOption hybridBuildOption;     // Hybrid build option
 }
 ```
 
@@ -371,6 +380,7 @@ Based on how bridge functions work, for a fixed AOT portion, the bridge function
 - `Generate AOT DLLs and Copy` — Generate AOT DLLs and copy to resource directory
 - `Generate Hot-Update DLLs and Copy` — Compile hot-update DLLs and copy to resource directory
 - `Supplement Prefab Dependencies` — Supplement prefab dependencies to link.xml
+- `Hybrid Builder` — Open the UI Toolkit all-in-one build window
 
 ### Sample Menus (`HybridTool/Sample-HotUpdateSample/`)
 
@@ -384,24 +394,48 @@ Based on how bridge functions work, for a fixed AOT portion, the bridge function
 
 ```text
 .
-├── package.json                # UPM package definition
-├── Editor/                     # Editor tool code
-│   ├── BuildHelper.cs          # Build helper utilities
-│   ├── HybridBuilderWindow.cs  # Build window main controller
-│   ├── HybridBuilderSettings.cs # Build configuration definition
-│   ├── HybridBuildPipeViewerBase.cs # Build pipeline base class
-│   ├── HybridScriptableBuildPipelineViewer.cs # SBP build pipeline
+├── package.json                # UPM package definition (dependencies, samples)
+├── CHANGELOG.md                # Changelog
+├── README.md / README_EN.md    # Bilingual documentation (CN / EN)
+├── LICENSE                     # MIT
+├── README/                     # Documentation assets (.png, .xmind, .pdf, .docx)
+│
+├── Editor/                     # Editor assembly: com.yanglingyun.hyu.Editor
+│   ├── HybridEditor.asmdef     # Editor-only asmdef
+│   ├── BuildHelper.cs          # AOT metadata check, DLL copy, APK build, link.xml supplement
+│   ├── HybridBuilderWindow.cs  # UI Toolkit build window controller
+│   ├── HybridBuilderWIndow.uxml # Window UI layout (note casing: WIndow)
+│   ├── HybridBuilderSettings.cs # Build config ScriptableObject + HybridBuildOption enum
+│   ├── HybridBuildPipeViewerBase.cs  # Build pipeline viewer base class
+│   ├── HybridBuildPipeViewerBase.uxml # Viewer UI layout
+│   ├── HybridScriptableBuildPipelineViewer.cs # SBP build pipeline viewer
+│   ├── SceneHelper.cs          # Scene utilities
 │   ├── BuildPipelineTask/      # Rewritten build pipeline tasks
+│   │   └── TaskBuildScript_SBP.cs  # SBP custom build task (script packaging)
 │   └── ScriptableBuildPipeline/ # Rewritten build pipeline
-├── Runtime/                    # Runtime code
-│   └── HybridRuntimeSettings.cs # Runtime config (CDN address, version, etc.)
-└── Samples~/                   # Importable samples
+│       ├── HybrdiScriptableBuildPipeline.cs     # SBP pipeline impl (note typo: Hybrdi)
+│       └── HybridScriptableBuildParameters.cs   # SBP build parameters
+│
+├── Runtime/                    # Runtime assembly: com.yanglingyun.hyu.Runtime
+│   ├── com.yanglingyun.hyu.Runtime.asmdef
+│   └── HybridRuntimeSettings.cs # Runtime config (CDN address, version, packages)
+│
+└── Samples~/                   # Importable samples (UPM convention, not compiled)
     ├── HotUpdateSample/        # Complete hot-update sample
-    │   ├── Editor/             # Sample editor tools
-    │   ├── HotUpdateScripts/   # Hot-update assembly
-    │   └── Settings/           # Configuration files
+    │   ├── AOTScripts/         # AOT runtime scripts (AOTPublic.asmdef)
+    │   ├── Editor/             # Sample editor tools (snapshot import, path normalization)
+    │   ├── EventDefine/        # UniEvent event definitions (Battle/Patch/Scene/User)
+    │   ├── HotUpdateAssets/    # Assets to be packaged (Prefabs/Scenes/Textures etc.)
+    │   ├── HotUpdateScripts/   # Hot-update assembly (HotUpdate.asmdef)
+    │   ├── PatchLogic/         # YooAsset patch download state machine (8 FSM nodes)
+    │   ├── Resources/          # Built-in resources (PatchWindow prefab etc.)
+    │   ├── Scripts/            # Main scene AOT scripts (GameManager, HybridLauncher)
+    │   ├── Settings/           # Pre-configured ScriptableObject assets
+    │   └── ThirdParty/         # Lightweight dependencies (UniEvent/UniMachine/UniUtility)
     └── BuildTests/             # Build pipeline tests
-        └── Editor/HybridBuildPipelineTests.cs
+        └── Editor/
+            ├── com.yanglingyun.hyu.Tests.Editor.asmdef
+            └── HybridBuildPipelineTests.cs  # NUnit EditMode tests
 ```
 
 ---
@@ -518,8 +552,14 @@ An NUnit EditMode test suite for validating build configuration and pipeline cor
 | **RuntimeSettings** | `HybridRuntimeSettings` asset existence, `HostServerIP` configuration |
 | **Platform Tests** | Platform-parameterized tests (Windows / Android / iOS): DLL output paths, AOT stripping paths, cross-platform path uniqueness |
 | **FirstBuildPrerequisites** | First-build prerequisite validation: AOT stripping directory, `GenerateAll` completeness, `MetadataCheck` pass |
-
+| **VersionLogic** | Version auto-increment correctness, `GetCurrentVersion` build/display dual format, output path sync after version bump |
+| **PipelineTypeValidation** | `HybrdiScriptableBuildPipeline` throws exception when passed illegal parameter types |
+| **CopyDllEdgeCases** | `CopyPatchedAOTDll` / `CopyHotUpdateDll` empty path defense, `CopyDllFileToByte` returns empty list when source directory missing |
 > Tests marked with `[Category("SlowTest")]` actually execute build commands and take longer; they are automatically skipped when the active platform does not match.
+
+#### Test Boundary Notes
+
+Tests only verify this package's own functionality (environment config, Editor methods, version logic, DLL compilation/copy, etc.). YooAsset resource packaging (`ScriptableBuildPipeline.Run()`), APK building (`BuildHelper.BuildAPK()`), and similar operations are the responsibility of their respective third-party frameworks or Unity build pipelines, covered by their own tests and not within this test scope.
 
 ---
 

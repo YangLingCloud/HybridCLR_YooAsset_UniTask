@@ -256,15 +256,24 @@ https://github.com/YangLingCloud/HybridCLR_YooAsset_UniTask.git
 ```csharp
 public class HybridBuilderSettings : ScriptableObject
 {
-    public HybridRuntimeSettings RuntimeSettings;
-    public List<string> AssetPackages = new List<string>();
-    public string ScriptPackageName;
-    public DefaultAsset PatchedAOTDLLFolder;
-    public DefaultAsset HotUpdateDLLFolder;
-    public int ReleaseBuildVersion;
-    public int AssetBuildVersion;
-    public int ScriptBuildVersion;
-    public bool isClearBuildCache;
+    public HybridRuntimeSettings RuntimeSettings;  // 关联的运行时配置
+    public List<string> AssetPackages;              // 资源包包名列表
+    public string ScriptPackageName;                // 脚本包包名
+    public DefaultAsset PatchedAOTDLLFolder;        // AOT 补充元数据 DLL 目录
+    public DefaultAsset HotUpdateDLLFolder;         // 热更新 DLL 目录
+    public int ReleaseBuildVersion;                 // 发行版本号
+    public int AssetBuildVersion;                   // 资源构建版本号
+    public int ScriptBuildVersion;                  // 脚本构建版本号
+    public string buildOutputPath;                  // 构建输出路径（支持相对路径）
+    public bool isClearBuildCache;                  // 是否清除构建缓存
+    public bool isUseAssetDependDB;                 // 是否使用资源依赖数据库（加速构建）
+    public bool isUseSelfIncrementingVersions;      // 是否使用自增版本号
+    public ECompressOption assetCompressOption;     // AB 包压缩方式
+    public EFileNameStyle assetFileNameStyle;       // AB 包命名方式
+    public string assetEncyptionClassName;          // AB 包加密类名
+    public EBuildinFileCopyOption assetBuildinFileCopyOption; // 首包 copy 选项
+    public string assetBuildinFileCopyParams;       // copy 选项参数
+    public HybridBuildOption hybridBuildOption;     // 混合构建选项
 }
 ```
 
@@ -371,6 +380,7 @@ HybridCLR + YooAsset + UniTask 的构建流程分为两个主要阶段：**主�
 - `Generate AOT DLLs and Copy` — 生成 AOT DLL 并拷贝到资源目录
 - `Generate Hot-Update DLLs and Copy` — 编译热更新 DLL 并拷贝到资源目录
 - `Supplement Prefab Dependencies` — 补全预制体依赖到 link.xml
+- `Hybrid Builder` — 打开 UI Toolkit 一体化构建窗口
 
 ### Sample 菜单（`HybridTool/Sample-HotUpdateSample/`）
 
@@ -384,24 +394,48 @@ HybridCLR + YooAsset + UniTask 的构建流程分为两个主要阶段：**主�
 
 ```text
 .
-├── package.json                # UPM 包定义
-├── Editor/                     # 编辑器工具代码
-│   ├── BuildHelper.cs          # 构建辅助工具
-│   ├── HybridBuilderWindow.cs  # 打包窗口主控制器
-│   ├── HybridBuilderSettings.cs # 构建配置定义
-│   ├── HybridBuildPipeViewerBase.cs # 构建管线基类
-│   ├── HybridScriptableBuildPipelineViewer.cs # SBP 构建管线
+├── package.json                # UPM 包定义（依赖、示例）
+├── CHANGELOG.md                # 变更日志
+├── README.md / README_EN.md    # 双语文档（中文 / 英文）
+├── LICENSE                     # MIT
+├── README/                     # 文档附件（.png、.xmind、.pdf、.docx）
+│
+├── Editor/                     # 编辑器程序集：com.yanglingyun.hyu.Editor
+│   ├── HybridEditor.asmdef     # 编辑器 asmdef
+│   ├── BuildHelper.cs          # AOT 元数据检查、DLL 拷贝、APK 构建、link.xml 补全
+│   ├── HybridBuilderWindow.cs  # UI Toolkit 打包窗口主控制器
+│   ├── HybridBuilderWIndow.uxml # 窗口 UI 布局（注意大小写：WIndow）
+│   ├── HybridBuilderSettings.cs # 构建配置 ScriptableObject + HybridBuildOption 枚举
+│   ├── HybridBuildPipeViewerBase.cs  # 构建管线查看器基类
+│   ├── HybridBuildPipeViewerBase.uxml # 查看器 UI 布局
+│   ├── HybridScriptableBuildPipelineViewer.cs # SBP 构建管线查看器
+│   ├── SceneHelper.cs          # 场景工具
 │   ├── BuildPipelineTask/      # 重写的打包流水线 Task
+│   │   └── TaskBuildScript_SBP.cs  # SBP 自定义构建任务（脚本打包）
 │   └── ScriptableBuildPipeline/ # 重写的打包流水线
-├── Runtime/                    # 运行时代码
-│   └── HybridRuntimeSettings.cs # 运行时配置（CDN 地址、版本号等）
-└── Samples~/                   # 可导入的示例
+│       ├── HybrdiScriptableBuildPipeline.cs     # SBP 管线实现（注意拼写：Hybrdi）
+│       └── HybridScriptableBuildParameters.cs   # SBP 构建参数
+│
+├── Runtime/                    # 运行时程序集：com.yanglingyun.hyu.Runtime
+│   ├── com.yanglingyun.hyu.Runtime.asmdef
+│   └── HybridRuntimeSettings.cs # 运行时配置（CDN 地址、版本号、包名）
+│
+└── Samples~/                   # 可导入的示例（UPM 约定，不参与编译）
     ├── HotUpdateSample/        # 完整热更新示例
-    │   ├── Editor/             # 示例编辑器工具
-    │   ├── HotUpdateScripts/   # 热更新程序集
-    │   └── Settings/           # 配置文件
+    │   ├── AOTScripts/         # AOT 运行时脚本（AOTPublic.asmdef）
+    │   ├── Editor/             # 示例编辑器工具（快照导入、路径规范化）
+    │   ├── EventDefine/        # UniEvent 事件定义（Battle/Patch/Scene/User）
+    │   ├── HotUpdateAssets/    # 待打包资源（Prefabs/Scenes/Textures 等）
+    │   ├── HotUpdateScripts/   # 热更新程序集（HotUpdate.asmdef）
+    │   ├── PatchLogic/         # YooAsset 补丁下载状态机（8 个 FSM 节点）
+    │   ├── Resources/          # 内置资源（PatchWindow 预制体等）
+    │   ├── Scripts/            # 主场景 AOT 脚本（GameManager、HybridLauncher）
+    │   ├── Settings/           # 预配置 ScriptableObject 资产
+    │   └── ThirdParty/         # 轻量依赖（UniEvent/UniMachine/UniUtility）
     └── BuildTests/             # 构建管线测试
-        └── Editor/HybridBuildPipelineTests.cs
+        └── Editor/
+            ├── com.yanglingyun.hyu.Tests.Editor.asmdef
+            └── HybridBuildPipelineTests.cs  # NUnit EditMode 测试
 ```
 
 ---

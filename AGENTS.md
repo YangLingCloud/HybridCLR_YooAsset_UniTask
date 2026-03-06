@@ -1,4 +1,4 @@
-# AGENTS.md — com.yanglingyun.hyu v3.0.0
+# AGENTS.md — com.yanglingyun.hyu v3.0.1
 
 ## Project Overview
 
@@ -21,6 +21,7 @@ This package provides an all-in-one editor build pipeline for Unity hot-update s
 ├── CHANGELOG.md                          # Changelog
 ├── README.md / README_EN.md              # Bilingual documentation (CN / EN)
 ├── LICENSE                               # MIT
+├── README/                               # Documentation assets (.png, .xmind, .pdf, .docx)
 │
 ├── Editor/                               # Editor assembly: com.yanglingyun.hyu.Editor
 │   ├── HybridEditor.asmdef               # Editor-only asmdef
@@ -215,12 +216,13 @@ This repository is package source code. Build and test execution happens inside 
 - XML doc comments use Chinese `<summary>`
 - `CreateAssetMenu` attribute for ScriptableObject creation menus
 
-### Known Filename Typos
+### Known Filename Typos & Naming Inconsistencies
 
 The following filenames have spelling inconsistencies. When modifying, keep `.meta` files in sync:
 
 - `Editor/HybridBuilderWIndow.uxml` (`WIndow` instead of `Window`)
 - `Editor/ScriptableBuildPipeline/HybrdiScriptableBuildPipeline.cs` (`Hybrdi` instead of `Hybrid`)
+- `Samples~/HotUpdateSample/HotUpdateScripts/animate/` — lowercase directory name (should be PascalCase `Animate/`)
 
 ## Safety Rules
 
@@ -272,3 +274,13 @@ The following filenames have spelling inconsistencies. When modifying, keep `.me
 
 - Three-segment: `ReleaseBuildVersion_AssetBuildVersion_ScriptBuildVersion`
 - Display format: `Realse:{r} AssetPakcage:{a} ScriptPackge:{s}` (note existing typos in code: `Realse`, `Pakcage`, `Packge`)
+
+### Known Assembly Definition Issues
+
+- `HybridEditor.asmdef` and `com.yanglingyun.hyu.Sample.Editor.asmdef` both reference a placeholder GUID `a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6` — this is a template/invalid reference that may cause assembly resolution warnings. Replace with actual GUID or remove if unused.
+
+### When Modifying README/ Documentation Assets
+
+- `README/` contains supplementary documentation files (.png diagrams, .xmind mind maps, .pdf, .docx)
+- These are NOT part of the UPM package distribution — consider adding to `.npmignore` if publishing to registry
+- Do not confuse with `README.md` / `README_EN.md` (the actual package documentation)
