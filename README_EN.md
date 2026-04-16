@@ -1,12 +1,7 @@
 # HybridCLR + YooAsset + UniTask Integrated Solution
 
 <div align="center">
-
 [![Unity 2022.3](https://img.shields.io/badge/Unity-2022.3-brightgreen)](https://unity.com/) [![HybridCLR](https://img.shields.io/badge/HybridCLR-v8.2.0-blue)](https://github.com/focus-creative-games/hybridclr) [![YooAsset](https://img.shields.io/badge/YooAsset-v2.3.9-orange)](https://github.com/tuyoogame/YooAsset) [![UniTask](https://img.shields.io/badge/UniTask-v2.5.10-purple)](https://github.com/Cysharp/UniTask) [![License](https://img.shields.io/badge/License-MIT-green)](LICENSE) [![中文](https://img.shields.io/badge/中文-文档-red)](./README.md)
-
-**Professional Unity Hot-Update & Resource Management Integrated Solution (Pure UPM Package)**
-
-*Enterprise-grade hot-update framework · High-performance resource management · Modern async programming*
 
 </div>
 
@@ -15,7 +10,6 @@
 ## Table of Contents
 
 - [Overview](#overview)
-- [Major Changes](#major-changes)
 - [Core Concepts](#core-concepts)
 - [Installation & Dependencies](#installation--dependencies)
 - [Quick Start](#quick-start)
@@ -41,49 +35,6 @@
 - All-in-one editor build window
 
 Built on **Unity 2022.3, HybridCLR 8.2.0, YooAsset 2.3.9, UniTask 2.5.10**.
-
-### Framework Comparison
-
-| Component | Description | Key Advantage |
-|-----------|-------------|---------------|
-| **HybridCLR** | Complete C# hot-update solution | Dynamic code execution under IL2CPP |
-| **YooAsset** | Professional resource management system | Efficient AssetBundle management and loading |
-| **UniTask** | High-performance async programming framework | Zero-allocation async operations |
-
----
-
-## Major Changes
-
-### Repository Upgraded to Pure Package Layout
-
-This repository has been migrated from "Unity project + embedded package" to "pure UPM package root":
-
-```text
-.
-├── package.json
-├── Editor/
-├── Runtime/
-└── Samples~/
-```
-
-> It no longer contains Unity project folders such as `Assets/`, `ProjectSettings/`, or `Packages/`.
-
-### Installation Change
-
-Now you can use the git URL directly:
-
-```json
-"https://github.com/YangLingCloud/HybridCLR_YooAsset_UniTask.git"
-```
-
-### Migration Guide from 2.x
-
-1. Update package reference to root URL (remove `?path=` usage)
-2. Re-import `HotUpdateSample` in host projects
-3. Run sample setup menus:
-   - `Restore HybridCLR Settings from Snapshot`
-   - `Normalize Collector Paths`
-4. On first build, allow automatic `GenerateAll` prerequisite chain when prompted
 
 ---
 
@@ -144,7 +95,8 @@ When running the first build in a fresh project via `HybridBuilder`, the full pr
 
 ### Installation
 
-Add via `Package Manager → Add Package From URL`:
+1. Install dependencies  [![HybridCLR](https://img.shields.io/badge/HybridCLR-v8.2.0-blue)](https://github.com/focus-creative-games/hybridclr) [![YooAsset](https://img.shields.io/badge/YooAsset-v2.3.9-orange)](https://github.com/tuyoogame/YooAsset) [![UniTask](https://img.shields.io/badge/UniTask-v2.5.10-purple)](https://github.com/Cysharp/UniTask) 
+2. Add via `Package Manager → Add Package From URL`:
 
 ```
 https://github.com/YangLingCloud/HybridCLR_YooAsset_UniTask.git

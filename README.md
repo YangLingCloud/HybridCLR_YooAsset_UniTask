@@ -1,12 +1,7 @@
 # HybridCLR + YooAsset + UniTask 集成解决方案
 
 <div align="center">
-
 [![Unity 2022.3](https://img.shields.io/badge/Unity-2022.3-brightgreen)](https://unity.com/) [![HybridCLR](https://img.shields.io/badge/HybridCLR-v8.2.0-blue)](https://github.com/focus-creative-games/hybridclr) [![YooAsset](https://img.shields.io/badge/YooAsset-v2.3.9-orange)](https://github.com/tuyoogame/YooAsset) [![UniTask](https://img.shields.io/badge/UniTask-v2.5.10-purple)](https://github.com/Cysharp/UniTask) [![License](https://img.shields.io/badge/License-MIT-green)](LICENSE) [![English](https://img.shields.io/badge/English-Document-blue)](./README_EN.md)
-
-**专业级 Unity 热更新与资源管理一体化解决方案（纯 UPM 包）**
-
-*企业级热更新框架 · 高性能资源管理 · 现代化异步编程*
 
 </div>
 
@@ -15,7 +10,6 @@
 ## 目录导航
 
 - [项目简介](#项目简介)
-- [重要变更](#重要变更)
 - [核心概念](#核心概念)
 - [安装与依赖](#安装与依赖)
 - [快速开始](#快速开始)
@@ -32,7 +26,7 @@
 
 ## 项目简介
 
-**HybridCLR + YooAsset + UniTask 集成解决方案**是一个专为 Unity 开发者设计的高性能热更新与资源管理框架。通过将三个业界领先的框架整合为统一工具链，为项目提供企业级的热更新能力：
+**HybridCLR + YooAsset + UniTask **是一个专为 Unity 开发者设计的高性能热更新与资源管理框架。
 
 - 热更新 DLL 编译与拷贝
 - AOT 元数据检查与补充流程
@@ -41,49 +35,6 @@
 - 一体化编辑器构建窗口
 
 基于 **Unity 2022.3、HybridCLR 8.2.0、YooAsset 2.3.9、UniTask 2.5.10** 版本整合。
-
-### 框架优势对比
-
-| 框架组件 | 功能描述 | 核心优势 |
-|---------|---------|---------|
-| **HybridCLR** | 完整的 C# 热更新解决方案 | 支持 IL2CPP 环境下的动态代码执行 |
-| **YooAsset** | 专业的资源管理系统 | 高效的 AssetBundle 管理与加载 |
-| **UniTask** | 高性能异步编程框架 | 零分配异步操作，提升性能 |
-
----
-
-## 重要变更
-
-### 仓库形态升级为纯 Package
-
-本仓库从"Unity 工程 + 内嵌包"迁移为"纯 UPM 包根目录"：
-
-```text
-.
-├── package.json
-├── Editor/
-├── Runtime/
-└── Samples~/
-```
-
-> 不再包含 `Assets/`、`ProjectSettings/`、`Packages/` 等 Unity 工程目录。
-
-### 安装方式变化
-
-现在直接使用 git URL 即可
-
-```json
-"https://github.com/YangLingCloud/HybridCLR_YooAsset_UniTask.git"
-```
-
-### 从 2.x 迁移指南
-
-1. 更新包引用为根目录 URL（移除 `?path=` 用法）
-2. 在宿主工程中重新导入 `HotUpdateSample`
-3. 运行 Sample 设置菜单：
-   - `Restore HybridCLR Settings from Snapshot`
-   - `Normalize Collector Paths`
-4. 首次构建时，按提示允许自动执行 `GenerateAll` 前置链
 
 ---
 
@@ -144,7 +95,8 @@ HybridCLR 官方推荐将代码直接挂载在预制体上，通过 AssetBundle 
 
 ### 安装步骤
 
-通过 `Package Manager → Add Package From URL` 添加：
+1. 通过[![HybridCLR](https://img.shields.io/badge/HybridCLR-v8.2.0-blue)](https://github.com/focus-creative-games/hybridclr) [![YooAsset](https://img.shields.io/badge/YooAsset-v2.3.9-orange)](https://github.com/tuyoogame/YooAsset) [![UniTask](https://img.shields.io/badge/UniTask-v2.5.10-purple)](https://github.com/Cysharp/UniTask)安装第三方包
+2. 通过 `Package Manager → Add Package From URL` 添加：
 
 ```
 https://github.com/YangLingCloud/HybridCLR_YooAsset_UniTask.git
@@ -172,7 +124,7 @@ https://github.com/YangLingCloud/HybridCLR_YooAsset_UniTask.git
 
 通过 Package Manager 找到 `com.yanglingyun.hyu`，点击 **Samples** 标签导入：
 
-- **Hot Update Sample** — 完整热更新示例
+- **Hot Update Sample** — 热更新示例
 - **Build Pipeline Tests** — 构建管线测试
 
 导入后路径为：`Assets/Samples/com.yanglingyun.hyu/<version>/Hot Update Sample/`
