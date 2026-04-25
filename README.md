@@ -28,7 +28,7 @@
 
 ## 项目简介
 
-**HybridCLR + YooAsset + UniTask **是一个专为 Unity 开发者设计的高性能热更新与资源管理框架。
+**HybridCLR + YooAsset + UniTask**是一个专为 Unity 开发者设计的高性能热更新与资源管理框架。
 
 - 热更新 DLL 编译与拷贝
 - AOT 元数据检查与补充流程
