@@ -1,37 +1,102 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" xsi="http://www.w3.org/2001/XMLSchema-instance" engine="UnityEngine.UIElements" editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../UIElementsSchema/UIElements.xsd" editor-extension-mode="True">
-    <ui:VisualElement name="BuildContainer">
-        <ui:VisualElement name="AssetOutputPar" picking-mode="Ignore" focusable="true" style="flex-grow: 1; overflow: hidden; flex-direction: row;">
-            <ui:TextField picking-mode="Ignore" label="AssetBuildOutput" name="BuildOutput" readonly="true" style="flex-wrap: wrap; align-items: stretch; flex-direction: row; justify-content: flex-start; align-content: flex-end; flex-shrink: 1; flex-grow: 1;" />
-            <ui:Button text="Browse" display-tooltip-when-elided="true" name="BrowseButton" enabled="true" style="align-items: auto; flex-direction: row; justify-content: flex-start; align-self: auto; align-content: auto; flex-wrap: wrap; flex-shrink: 0; flex-grow: 0; flex-basis: auto; width: auto;" />
-        </ui:VisualElement>
-        <ui:VisualElement name="ScriptOutputPar" picking-mode="Ignore" focusable="true" style="flex-grow: 1; overflow: hidden; flex-direction: row; display: none;">
-            <ui:TextField picking-mode="Ignore" label="ScriptBuildOutput" name="BuildOutput" readonly="true" style="flex-wrap: wrap; align-items: stretch; flex-direction: row; justify-content: flex-start; align-content: flex-end; flex-shrink: 1; flex-grow: 1; display: flex;" />
-            <ui:Button text="Browse" display-tooltip-when-elided="true" name="BrowseButton" enabled="true" style="align-items: auto; flex-direction: row; justify-content: flex-start; align-self: auto; align-content: auto; flex-wrap: wrap; flex-shrink: 0; flex-grow: 0; flex-basis: auto; width: auto;" />
-        </ui:VisualElement>
-        <ui:VisualElement name="VersionPar" style="flex-grow: 1; flex-wrap: nowrap; flex-direction: row; align-self: auto; align-content: flex-start; align-items: stretch;">
-            <ui:TextField picking-mode="Ignore" label="Build Version" name="BuildVersion" readonly="true" style="flex-wrap: wrap; align-items: stretch; flex-shrink: 1; flex-grow: 1;" />
-            <ui:Toggle label="Use of self-incrementing versions" name="Toggle" style="flex-wrap: wrap; align-items: stretch; flex-direction: row; align-content: auto;" />
-        </ui:VisualElement>
-        <ui:VisualElement name="HotUpdateScriptContainer" enabled="true" style="height: auto; align-items: stretch; align-content: auto; flex-direction: column; flex-shrink: 0; flex-grow: 0; display: none; flex-wrap: wrap; align-self: auto;">
-            <ui:VisualElement name="VersionPar" style="flex-grow: 1; flex-wrap: nowrap; flex-direction: row; align-self: auto; align-content: flex-start; align-items: stretch;">
-                <ui:TextField picking-mode="Ignore" label="Build Version" name="BuildVersion" readonly="true" style="flex-wrap: wrap; align-items: stretch; flex-shrink: 1; flex-grow: 1;" />
-                <ui:Toggle label="Use of self-incrementing versions" name="Toggle" style="flex-wrap: wrap; align-items: stretch; flex-direction: row; align-content: auto;" />
+    <Style src="HybridBuilderWindow.uss" />
+
+    <ui:VisualElement name="BuildContainer" class="root-container">
+
+        <!-- 版本信息卡片 -->
+        <ui:VisualElement class="card">
+            <ui:VisualElement class="card-header">
+                <ui:Label text="Version Information" class="card-title" />
+            </ui:VisualElement>
+            <ui:VisualElement class="card-content">
+                <ui:VisualElement class="version-container">
+                    <ui:Label text="Current Version:" class="version-label" />
+                    <ui:TextField name="BuildVersion" readonly="true" class="version-value form-field" />
+                    <ui:Toggle label="Auto Increment" name="Toggle" class="toggle-field" />
+                </ui:VisualElement>
             </ui:VisualElement>
         </ui:VisualElement>
-        <ui:Toggle label="Clear Build Cache" name="ClearBuildCache" />
-        <ui:Toggle label="Use Asset Depend DB" name="UseAssetDependency" />
-        <ui:Label tabindex="-1" text="More than 2 packages are required to execute HybridBuild !" parse-escape-sequences="true" display-tooltip-when-elided="true" name="PackageErrorLabel" style="flex-wrap: nowrap; align-items: auto; align-self: center; color: rgb(255, 0, 0);" />
-        <ui:VisualElement name="AssetBundlePackageContainer" style="flex-grow: 1;" />
-        <ui:VisualElement name="EncryptionContainer" style="height: 24px;" />
-        <uie:EnumField label="Compression" value="Center" name="Compression" />
-        <uie:EnumField label="File Name Style" value="Center" name="FileNameStyle" />
-        <uie:EnumField label="Copy Buildin File Option" value="Center" name="CopyBuildinFileOption" />
-        <ui:TextField picking-mode="Ignore" label="Copy Buildin File Param" name="CopyBuildinFileParam" />
-        <ui:Toggle label="BuildHotUpdateScript" name="BuildHotUpdateScriptToggle" style="flex-wrap: wrap; align-items: stretch; display: none;" />
-        <uie:EnumField label="Hybrid Build Option" value="Center" name="HybridBuildOption" style="flex-shrink: 0; flex-grow: 0; flex-wrap: nowrap;" />
-        <uie:ObjectField label="Patched AOT DLL Folder" name="PatchedAOTDLLFolder" type="UnityEditor.DefaultAsset, UnityEditor.CoreModule" />
-        <uie:ObjectField label="Hot Update DLL Folder" name="HotUpdateDLLFolder" type="UnityEditor.DefaultAsset, UnityEditor.CoreModule" />
+
+        <!-- 输出路径卡片 -->
+        <ui:VisualElement class="card">
+            <ui:VisualElement class="card-header">
+                <ui:Label text="Output Paths" class="card-title" />
+            </ui:VisualElement>
+            <ui:VisualElement class="card-content">
+                <!-- Asset 输出路径 -->
+                <ui:VisualElement name="AssetOutputPar" class="form-row">
+                    <ui:TextField label="Asset Output" name="BuildOutput" readonly="true" class="form-field" />
+                    <ui:Button text="Browse" name="BrowseButton" class="browse-button" />
+                </ui:VisualElement>
+
+                <!-- Script 输出路径 -->
+                <ui:VisualElement name="ScriptOutputPar" class="form-row hidden">
+                    <ui:TextField label="Script Output" name="BuildOutput" readonly="true" class="form-field" />
+                    <ui:Button text="Browse" name="BrowseButton" class="browse-button" />
+                </ui:VisualElement>
+            </ui:VisualElement>
+        </ui:VisualElement>
+
+        <!-- 构建选项卡片 -->
+        <ui:VisualElement class="card">
+            <ui:VisualElement class="card-header">
+                <ui:Label text="Build Options" class="card-title" />
+            </ui:VisualElement>
+            <ui:VisualElement class="card-content">
+                <uie:EnumField label="Build Mode" name="HybridBuildOption" class="enum-field" />
+                <ui:VisualElement class="separator" />
+                <ui:Toggle label="Clear Build Cache" name="ClearBuildCache" class="toggle-field" />
+                <ui:Toggle label="Use Asset Dependency DB" name="UseAssetDependency" class="toggle-field" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+
+        <!-- DLL 配置卡片 -->
+        <ui:VisualElement class="card">
+            <ui:VisualElement class="card-header">
+                <ui:Label text="DLL Configuration" class="card-title" />
+            </ui:VisualElement>
+            <ui:VisualElement class="card-content">
+                <uie:ObjectField label="Patched AOT DLL Folder" name="PatchedAOTDLLFolder" type="UnityEditor.DefaultAsset, UnityEditor.CoreModule" class="object-field" />
+                <uie:ObjectField label="Hot Update DLL Folder" name="HotUpdateDLLFolder" type="UnityEditor.DefaultAsset, UnityEditor.CoreModule" class="object-field" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+
+        <!-- 资源包配置卡片 -->
+        <ui:VisualElement class="card">
+            <ui:VisualElement class="card-header">
+                <ui:Label text="Asset Bundle Configuration" class="card-title" />
+            </ui:VisualElement>
+            <ui:VisualElement class="card-content">
+                <ui:Label name="PackageErrorLabel" text="More than 2 packages are required to execute HybridBuild!" class="warning-label hidden" />
+                <ui:VisualElement name="AssetBundlePackageContainer" class="package-list" />
+                <ui:VisualElement class="separator" />
+                <ui:VisualElement name="EncryptionContainer" />
+                <uie:EnumField label="Compression" name="Compression" class="enum-field" />
+                <uie:EnumField label="File Name Style" name="FileNameStyle" class="enum-field" />
+                <uie:EnumField label="Copy Buildin File Option" name="CopyBuildinFileOption" class="enum-field" />
+                <ui:TextField label="Copy Buildin File Param" name="CopyBuildinFileParam" class="form-field" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+
+        <!-- 热更新脚本容器（可选显示） -->
+        <ui:VisualElement name="HotUpdateScriptContainer" class="card hidden">
+            <ui:VisualElement class="card-header">
+                <ui:Label text="Hot Update Script" class="card-title" />
+            </ui:VisualElement>
+            <ui:VisualElement class="card-content">
+                <ui:VisualElement name="VersionPar" class="version-container">
+                    <ui:Label text="Script Version:" class="version-label" />
+                    <ui:TextField name="BuildVersion" readonly="true" class="version-value form-field" />
+                    <ui:Toggle label="Auto Increment" name="Toggle" class="toggle-field" />
+                </ui:VisualElement>
+                <ui:Toggle label="Build Hot Update Script" name="BuildHotUpdateScriptToggle" class="toggle-field" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+
+        <!-- 扩展容器 -->
         <ui:VisualElement name="ExtensionContainer" />
-        <ui:Button text="Click Build" display-tooltip-when-elided="true" name="Build" style="height: 50px; background-color: rgb(40, 106, 42); margin-top: 10px;" />
+
+        <!-- 构建按钮 -->
+        <ui:Button text="Start Build" name="Build" class="button-primary button-success" />
     </ui:VisualElement>
 </ui:UXML>

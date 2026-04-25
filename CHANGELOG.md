@@ -5,6 +5,26 @@ All notable changes to this package are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.1.1] - 2026-04-25
+
+### Added
+
+- `Editor/HybridBuilderWindow.uss`：现代化 UI 样式表，包含卡片式布局、统一配色方案、按钮样式、状态标签等
+
+### Changed
+
+- `Editor/HybridBuilderWindow.uxml`：重构为简洁的工具栏布局，引入 USS 样式表
+- `Editor/HybridBuildPipeViewerBase.uxml`：采用卡片式布局，应用统一样式类
+- `Editor/HybridBuilderWindow.cs`：优化空状态提示，使用友好的错误/信息卡片替代简单文本
+
+### Improved
+
+- 界面采用深色主题配色方案（主色 #3A79BB，成功 #28A745，警告 #FFC107，错误 #DC3545）
+- 所有卡片使用 6px 圆角和统一内边距，增强视觉层次
+- 表单字段统一标签宽度 140px，输入框带 Hover/Focus 状态反馈
+- 按钮分为主要/次要/成功/危险四种样式，高度统一为 40px/28px
+- 错误/警告/信息标签带左侧彩色边框，提升可读性
+
 ## [3.1.0] - 2026-04-24
 
 ### Breaking Changes

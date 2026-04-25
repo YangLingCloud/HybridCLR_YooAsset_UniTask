@@ -1,0 +1,436 @@
+/* ===== 全局样式 ===== */
+.root-container {
+    flex-grow: 1;
+    background-color: rgb(56, 56, 56);
+}
+
+/* ===== 工具栏样式 ===== */
+.toolbar {
+    background-color: rgb(42, 42, 42);
+    border-bottom-width: 1px;
+    border-bottom-color: rgb(26, 26, 26);
+    padding: 4px 8px;
+    flex-direction: row;
+    min-height: 32px;
+}
+
+.toolbar-label {
+    -unity-font-style: bold;
+    color: rgb(210, 210, 210);
+    margin-right: 8px;
+    -unity-text-align: middle-left;
+    font-size: 12px;
+}
+
+.toolbar-menu {
+    min-width: 180px;
+    background-color: rgb(62, 62, 62);
+    border-radius: 3px;
+    margin-right: 8px;
+}
+
+/* ===== 主容器样式 ===== */
+.main-container {
+    flex-grow: 1;
+    padding: 16px;
+    background-color: rgb(56, 56, 56);
+}
+
+/* ===== 卡片样式 ===== */
+.card {
+    background-color: rgb(62, 62, 62);
+    border-radius: 6px;
+    padding: 16px;
+    margin-bottom: 12px;
+    border-width: 1px;
+    border-color: rgb(42, 42, 42);
+}
+
+.card-header {
+    flex-direction: row;
+    align-items: center;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom-width: 1px;
+    border-bottom-color: rgb(80, 80, 80);
+}
+
+.card-title {
+    font-size: 14px;
+    -unity-font-style: bold;
+    color: rgb(220, 220, 220);
+    flex-grow: 1;
+}
+
+.card-icon {
+    width: 16px;
+    height: 16px;
+    margin-right: 8px;
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+.card-content {
+    flex-grow: 1;
+}
+
+/* ===== 表单样式 ===== */
+.form-row {
+    flex-direction: row;
+    align-items: center;
+    margin-bottom: 8px;
+    min-height: 24px;
+}
+
+.form-field {
+    flex-grow: 1;
+    margin-right: 8px;
+}
+
+.form-field > Label {
+    min-width: 140px;
+    color: rgb(200, 200, 200);
+    font-size: 12px;
+}
+
+.form-field > TextElement {
+    background-color: rgb(42, 42, 42);
+    border-radius: 3px;
+    padding: 4px 8px;
+    color: rgb(210, 210, 210);
+    border-width: 1px;
+    border-color: rgb(26, 26, 26);
+}
+
+.form-field:hover > TextElement {
+    border-color: rgb(90, 90, 90);
+}
+
+.form-field:focus > TextElement {
+    border-color: rgb(58, 121, 187);
+}
+
+/* ===== 按钮样式 ===== */
+.button-primary {
+    height: 40px;
+    background-color: rgb(58, 121, 187);
+    border-radius: 4px;
+    border-width: 0;
+    color: rgb(255, 255, 255);
+    font-size: 13px;
+    -unity-font-style: bold;
+    margin-top: 8px;
+    transition-duration: 0.2s;
+}
+
+.button-primary:hover {
+    background-color: rgb(70, 140, 210);
+}
+
+.button-primary:active {
+    background-color: rgb(45, 100, 160);
+}
+
+.button-secondary {
+    height: 28px;
+    background-color: rgb(80, 80, 80);
+    border-radius: 3px;
+    border-width: 1px;
+    border-color: rgb(60, 60, 60);
+    color: rgb(220, 220, 220);
+    font-size: 11px;
+}
+
+.button-secondary:hover {
+    background-color: rgb(90, 90, 90);
+    border-color: rgb(100, 100, 100);
+}
+
+.button-success {
+    background-color: rgb(40, 167, 69);
+}
+
+.button-success:hover {
+    background-color: rgb(50, 190, 85);
+}
+
+.button-danger {
+    background-color: rgb(220, 53, 69);
+}
+
+.button-danger:hover {
+    background-color: rgb(240, 70, 90);
+}
+
+.browse-button {
+    width: 80px;
+    height: 24px;
+    background-color: rgb(80, 80, 80);
+    border-radius: 3px;
+    border-width: 1px;
+    border-color: rgb(60, 60, 60);
+    margin-left: 4px;
+}
+
+.browse-button:hover {
+    background-color: rgb(90, 90, 90);
+}
+
+/* ===== Toggle 样式 ===== */
+.toggle-field {
+    flex-direction: row;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.toggle-field > Label {
+    color: rgb(200, 200, 200);
+    font-size: 12px;
+    min-width: 140px;
+}
+
+/* ===== 版本信息样式 ===== */
+.version-container {
+    flex-direction: row;
+    align-items: center;
+    background-color: rgb(52, 52, 52);
+    border-radius: 4px;
+    padding: 8px 12px;
+    margin-bottom: 8px;
+}
+
+.version-label {
+    color: rgb(180, 180, 180);
+    font-size: 11px;
+    margin-right: 8px;
+}
+
+.version-value {
+    color: rgb(100, 200, 255);
+    font-size: 12px;
+    -unity-font-style: bold;
+    flex-grow: 1;
+}
+
+/* ===== 状态标签样式 ===== */
+.status-label {
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 11px;
+    -unity-font-style: bold;
+    margin-left: 8px;
+}
+
+.status-success {
+    background-color: rgba(40, 167, 69, 0.2);
+    color: rgb(100, 255, 150);
+}
+
+.status-warning {
+    background-color: rgba(255, 193, 7, 0.2);
+    color: rgb(255, 220, 100);
+}
+
+.status-error {
+    background-color: rgba(220, 53, 69, 0.2);
+    color: rgb(255, 120, 130);
+}
+
+.status-info {
+    background-color: rgba(58, 121, 187, 0.2);
+    color: rgb(120, 180, 255);
+}
+
+/* ===== 错误提示样式 ===== */
+.error-label {
+    color: rgb(255, 100, 100);
+    font-size: 12px;
+    -unity-font-style: bold;
+    padding: 8px 12px;
+    background-color: rgba(220, 53, 69, 0.15);
+    border-radius: 4px;
+    border-left-width: 3px;
+    border-left-color: rgb(220, 53, 69);
+    margin-bottom: 8px;
+}
+
+.warning-label {
+    color: rgb(255, 220, 100);
+    font-size: 12px;
+    padding: 8px 12px;
+    background-color: rgba(255, 193, 7, 0.15);
+    border-radius: 4px;
+    border-left-width: 3px;
+    border-left-color: rgb(255, 193, 7);
+    margin-bottom: 8px;
+}
+
+.info-label {
+    color: rgb(120, 180, 255);
+    font-size: 12px;
+    padding: 8px 12px;
+    background-color: rgba(58, 121, 187, 0.15);
+    border-radius: 4px;
+    border-left-width: 3px;
+    border-left-color: rgb(58, 121, 187);
+    margin-bottom: 8px;
+}
+
+/* ===== 分隔线样式 ===== */
+.separator {
+    height: 1px;
+    background-color: rgb(80, 80, 80);
+    margin-top: 12px;
+    margin-bottom: 12px;
+}
+
+/* ===== 滚动视图样式 ===== */
+.scroll-view {
+    flex-grow: 1;
+}
+
+/* ===== 包列表样式 ===== */
+.package-list {
+    flex-grow: 1;
+}
+
+.package-item {
+    flex-direction: row;
+    align-items: center;
+    padding: 8px 12px;
+    background-color: rgb(52, 52, 52);
+    border-radius: 4px;
+    margin-bottom: 4px;
+    border-width: 1px;
+    border-color: rgb(42, 42, 42);
+}
+
+.package-item:hover {
+    background-color: rgb(60, 60, 60);
+    border-color: rgb(80, 80, 80);
+}
+
+.package-name {
+    color: rgb(220, 220, 220);
+    font-size: 12px;
+    flex-grow: 1;
+}
+
+.package-version {
+    color: rgb(150, 150, 150);
+    font-size: 11px;
+    margin-left: 8px;
+}
+
+/* ===== 枚举字段样式 ===== */
+.enum-field {
+    margin-bottom: 8px;
+}
+
+.enum-field > Label {
+    min-width: 140px;
+    color: rgb(200, 200, 200);
+    font-size: 12px;
+}
+
+/* ===== 对象字段样式 ===== */
+.object-field {
+    margin-bottom: 8px;
+}
+
+.object-field > Label {
+    min-width: 140px;
+    color: rgb(200, 200, 200);
+    font-size: 12px;
+}
+
+/* ===== 构建选项卡片样式 ===== */
+.build-option-card {
+    background-color: rgb(62, 62, 62);
+    border-radius: 6px;
+    padding: 12px;
+    margin-bottom: 8px;
+    border-width: 1px;
+    border-color: rgb(42, 42, 42);
+}
+
+.build-option-card:hover {
+    border-color: rgb(80, 80, 80);
+}
+
+.build-option-selected {
+    border-color: rgb(58, 121, 187);
+    border-width: 2px;
+    background-color: rgba(58, 121, 187, 0.1);
+}
+
+/* ===== 进度条样式 ===== */
+.progress-bar {
+    height: 4px;
+    background-color: rgb(42, 42, 42);
+    border-radius: 2px;
+    margin-top: 8px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    background-color: rgb(58, 121, 187);
+    border-radius: 2px;
+}
+
+/* ===== 工具提示样式 ===== */
+.tooltip {
+    background-color: rgb(42, 42, 42);
+    border-radius: 4px;
+    padding: 6px 10px;
+    color: rgb(220, 220, 220);
+    font-size: 11px;
+    border-width: 1px;
+    border-color: rgb(80, 80, 80);
+}
+
+/* ===== 响应式间距 ===== */
+.spacing-small {
+    margin-bottom: 4px;
+}
+
+.spacing-medium {
+    margin-bottom: 8px;
+}
+
+.spacing-large {
+    margin-bottom: 16px;
+}
+
+/* ===== 辅助类 ===== */
+.hidden {
+    display: none;
+}
+
+.flex-row {
+    flex-direction: row;
+}
+
+.flex-column {
+    flex-direction: column;
+}
+
+.align-center {
+    align-items: center;
+}
+
+.justify-center {
+    justify-content: center;
+}
+
+.text-center {
+    -unity-text-align: middle-center;
+}
+
+.text-bold {
+    -unity-font-style: bold;
+}
+
+.text-muted {
+    color: rgb(150, 150, 150);
+}

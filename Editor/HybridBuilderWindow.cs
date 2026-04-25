@@ -41,61 +41,90 @@ public class HybridBuilderWindow : EditorWindow
                 return;
 
             visualAsset.CloneTree(root);
+
+            // 应用根容器样式
+            root.AddToClassList("root-container");
+
             _toolbar = root.Q<Toolbar>("Toolbar");
             _container = root.Q("Container");
-            
+
 
             var hybridBuilderSettings = FindAllHybridBuilderSettings();
             if (hybridBuilderSettings.Count == 0)
             {
-                var label = new Label();
-                label.text = "Not found any HybridBuilderSetting";
-                label.style.width = 100;
-                _toolbar.Add(label);
+                ShowEmptyState(_toolbar, "No HybridBuilderSettings found",
+                    "Please create a HybridBuilderSettings asset first.");
                 return;
             }
 
             //HybridBuilder打包设置
             {
                 _hybridBuilderSettings = hybridBuilderSettings[0];
-                _hybridBuilderSettingMenu = new ToolbarMenu();
-                _hybridBuilderSettingMenu.style.width = 200;
+                _hybridBuilderSettingMenu = root.Q<ToolbarMenu>("BuilderSettingMenu");
+                if (_hybridBuilderSettingMenu == null)
+                {
+                    _hybridBuilderSettingMenu = new ToolbarMenu();
+                    _hybridBuilderSettingMenu.name = "BuilderSettingMenu";
+                    _hybridBuilderSettingMenu.AddToClassList("toolbar-menu");
+                    _toolbar.Add(_hybridBuilderSettingMenu);
+                }
+
                 foreach (var hybridBuilderSetting in hybridBuilderSettings)
                 {
                     _hybridBuilderSettingMenu.menu.AppendAction(hybridBuilderSetting.name,
                         HybridBuilderSettingMenuAction, HybridBuilderSettingMenuFun, hybridBuilderSetting);
                 }
-
-                _toolbar.Add(_hybridBuilderSettingMenu);
             }
+
             _hybridRuntimeSettings = FindAllHybridRuntimeSettings();
             if (_hybridRuntimeSettings.Count == 0)
             {
-                var label = new Label();
-                label.text = "Not found any hybridRuntimeSetting";
-                label.style.width = 100;
-                _toolbar.Add(label);
+                ShowEmptyState(_toolbar, "No HybridRuntimeSettings found",
+                    "Please create a HybridRuntimeSettings asset first.");
                 return;
             }
 
             EnsureRuntimeSettingsAssigned();
-            _hybridRuntimeSettingMenu = new ToolbarMenu();
-            _hybridRuntimeSettingMenu.style.width = 200;
+            _hybridRuntimeSettingMenu = root.Q<ToolbarMenu>("RuntimeSettingMenu");
+            if (_hybridRuntimeSettingMenu == null)
+            {
+                _hybridRuntimeSettingMenu = new ToolbarMenu();
+                _hybridRuntimeSettingMenu.name = "RuntimeSettingMenu";
+                _hybridRuntimeSettingMenu.AddToClassList("toolbar-menu");
+                _toolbar.Add(_hybridRuntimeSettingMenu);
+            }
+
             foreach (var runtimeSettings in _hybridRuntimeSettings)
             {
                 _hybridRuntimeSettingMenu.menu.AppendAction(runtimeSettings.name,
                     HybridBuilderRuntimeMenuAction, HybridRuntimeSettingMenuFun, runtimeSettings);
             }
 
-            _toolbar.Add(_hybridRuntimeSettingMenu);
-            
-            
             RefreshBuildPipelineView();
         }
         catch (Exception e)
         {
             Debug.LogError(e.ToString());
         }
+    }
+
+    private void ShowEmptyState(VisualElement parent, string title, string message)
+    {
+        var container = new VisualElement();
+        container.AddToClassList("card");
+        container.style.marginTop = 16;
+        container.style.marginLeft = 16;
+        container.style.marginRight = 16;
+
+        var titleLabel = new Label(title);
+        titleLabel.AddToClassList("error-label");
+        container.Add(titleLabel);
+
+        var messageLabel = new Label(message);
+        messageLabel.AddToClassList("info-label");
+        container.Add(messageLabel);
+
+        parent.Add(container);
     }
 
     private void RefreshBuildPipelineView()

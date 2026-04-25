@@ -1,11 +1,11 @@
-# AGENTS.md — com.yanglingyun.hyu v3.1.0
+# AGENTS.md — com.yanglingyun.hyu v3.1.1
 
 ## Project Overview
 
 This repository is a **pure Unity Package (UPM) root**, not a Unity project.
 
 - Package name: `com.yanglingyun.hyu`
-- Version: 3.1.0
+- Version: 3.1.1
 - Minimum Unity: 2022.3
 - Domain: HybridCLR + YooAsset hot-update build toolchain
 - Target platforms: Windows, Android, iOS
@@ -28,10 +28,13 @@ This package provides an all-in-one editor build pipeline for Unity hot-update s
 │   ├── BuildHelper.cs                    # AOT metadata check, DLL copy, APK build, link.xml supplement
 │   ├── HybridBuilderWindow.cs            # UI Toolkit build window controller
 │   ├── HybridBuilderWindow.uxml          # Window UI layout
+│   ├── HybridBuilderWindow.uss           # Modern UI stylesheet (card layout, color scheme, button styles)
 │   ├── HybridBuilderSettings.cs          # Build config ScriptableObject + HybridBuildOption enum
 │   ├── HybridBuildPipeViewerBase.cs      # Build pipeline viewer base class
-│   ├── HybridBuildPipeViewerBase.uxml    # Viewer UI layout
+│   ├── HybridBuildPipeViewerBase.uxml    # Viewer UI layout (card-based design)
 │   ├── HybridScriptableBuildPipelineViewer.cs  # SBP build pipeline viewer
+│   ├── HybridPaths.cs                    # Centralized path constants (AOT/HotUpdate DLL dirs, link.xml, manifests)
+│   ├── HybridRuntimeSettingsMigrator.cs  # Auto-migrate legacy Packages JSON to structured list
 │   ├── SceneHelper.cs                    # Scene utilities
 │   ├── BuildPipelineTask/
 │   │   └── TaskBuildScript_SBP.cs        # SBP custom build task (script packaging)
@@ -268,10 +271,30 @@ The following filenames have spelling inconsistencies. When modifying, keep `.me
 - Sample-level menus go under `HybridTool/Sample-HotUpdateSample/`
 - Menu labels must be in English
 
+### UI Design Guidelines
+
+- **NEVER use Emoji icons** in any code, UI elements, labels, buttons, dialogs, menu items, or log messages
+- Use plain text descriptions instead of emojis for better compatibility and professionalism
+- Exception: Emojis are allowed ONLY in documentation files (README.md, CHANGELOG.md, comments) for visual enhancement
+- This rule applies to: UI Toolkit labels, button text, dialog titles, menu items, log messages, error messages, C# string literals
+
 ### Version Number Format
 
 - Three-segment: `ReleaseBuildVersion_AssetBuildVersion_ScriptBuildVersion`
 - Display format: `Realse:{r} AssetPakcage:{a} ScriptPackge:{s}` (note existing typos in code: `Realse`, `Pakcage`, `Packge`)
+
+### Version Management Rules
+
+- **Package version follows Semantic Versioning**: `MAJOR.MINOR.PATCH` (e.g., 3.1.1)
+- **Default version increment**: ALWAYS increment PATCH version (third number) for any changes
+- **MINOR version increment**: Only when user explicitly requests it OR when adding significant new features
+- **MAJOR version increment**: Only when user explicitly requests it OR when introducing breaking changes
+- Examples:
+  - UI optimization: 3.1.0 → 3.1.1 (PATCH)
+  - Bug fixes: 3.1.1 → 3.1.2 (PATCH)
+  - New feature (user requested): 3.1.2 → 3.2.0 (MINOR)
+  - Breaking changes (user requested): 3.2.0 → 4.0.0 (MAJOR)
+- When in doubt, use PATCH increment unless explicitly told otherwise
 
 ### Known Assembly Definition Issues
 

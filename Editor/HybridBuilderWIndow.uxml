@@ -1,4 +1,14 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" xsi="http://www.w3.org/2001/XMLSchema-instance" engine="UnityEngine.UIElements" editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../UIElementsSchema/UIElements.xsd" editor-extension-mode="True">
-    <uie:Toolbar name="Toolbar" style="display: flex; flex-direction: row;" />
-    <ui:VisualElement name="Container" />
+    <Style src="HybridBuilderWindow.uss" />
+
+    <!-- 工具栏 -->
+    <uie:Toolbar name="Toolbar" class="toolbar">
+        <ui:Label text="Builder Settings:" class="toolbar-label" />
+        <uie:ToolbarMenu name="BuilderSettingMenu" class="toolbar-menu" />
+        <ui:Label text="Runtime Settings:" class="toolbar-label" />
+        <uie:ToolbarMenu name="RuntimeSettingMenu" class="toolbar-menu" />
+    </uie:Toolbar>
+
+    <!-- 主容器 -->
+    <ui:ScrollView name="Container" class="main-container scroll-view" />
 </ui:UXML>
