@@ -173,6 +173,7 @@ A modern build tool window based on **UI Toolkit**, rewriting YooAsset.AssetBund
 
 - **HybridBuilderWindow** — Main window controller
 - **HybridBuilderWindow.uxml** — UI layout definition
+- **HybridBuilderWindow.uss** — Modern UI stylesheet
 - **HybridBuildPipeViewerBase** — Core functionality base class
 
 #### Using HybridBuilderWindow
@@ -224,7 +225,7 @@ public class HybridBuilderSettings : ScriptableObject
     public bool isUseSelfIncrementingVersions;      // Use auto-incrementing version numbers
     public ECompressOption assetCompressOption;     // AB compression option
     public EFileNameStyle assetFileNameStyle;       // AB file naming style
-    public string assetEncyptionClassName;          // AB encryption class name
+    public string assetEncryptionClassName;          // AB encryption class name
     public EBuildinFileCopyOption assetBuildinFileCopyOption; // Built-in file copy option
     public string assetBuildinFileCopyParams;       // Copy option parameters
     public HybridBuildOption hybridBuildOption;     // Hybrid build option
@@ -234,11 +235,18 @@ public class HybridBuilderSettings : ScriptableObject
 ### HybridRuntimeSettings Configuration
 
 ```csharp
+[Serializable]
+public class PackageVersion
+{
+    public string Name;
+    public string Version;
+}
+
 public class HybridRuntimeSettings : ScriptableObject
 {
     public string HostServerIP;
     public int ReleaseBuildVersion;
-    public string Packages;
+    public List<PackageVersion> Packages;
 }
 ```
 
@@ -359,10 +367,13 @@ Based on how bridge functions work, for a fixed AOT portion, the bridge function
 │   ├── BuildHelper.cs          # AOT metadata check, DLL copy, APK build, link.xml supplement
 │   ├── HybridBuilderWindow.cs  # UI Toolkit build window controller
 │   ├── HybridBuilderWindow.uxml # Window UI layout
+│   ├── HybridBuilderWindow.uss # Modern UI stylesheet (card layout, color scheme, button styles)
 │   ├── HybridBuilderSettings.cs # Build config ScriptableObject + HybridBuildOption enum
 │   ├── HybridBuildPipeViewerBase.cs  # Build pipeline viewer base class
-│   ├── HybridBuildPipeViewerBase.uxml # Viewer UI layout
+│   ├── HybridBuildPipeViewerBase.uxml # Viewer UI layout (card-based design)
 │   ├── HybridScriptableBuildPipelineViewer.cs # SBP build pipeline viewer
+│   ├── HybridPaths.cs          # Centralized path constants (AOT/HotUpdate DLL dirs, link.xml, manifests)
+│   ├── HybridRuntimeSettingsMigrator.cs # Auto-migrate legacy Packages JSON to structured list
 │   ├── SceneHelper.cs          # Scene utilities
 │   ├── BuildPipelineTask/      # Rewritten build pipeline tasks
 │   │   └── TaskBuildScript_SBP.cs  # SBP custom build task (script packaging)
@@ -501,14 +512,12 @@ An NUnit EditMode test suite for validating build configuration and pipeline cor
 
 | Test Category | Description |
 |---|---|
-| **BuildConfig** | HybridCLR configuration existence, hot-update/AOT assembly lists, build scene list, project path validity |
-| **BuilderSettings** | `HybridBuilderSettings` asset existence, `RuntimeSettings` association, build output path resolution, version format |
-| **RuntimeSettings** | `HybridRuntimeSettings` asset existence, `HostServerIP` configuration |
-| **Platform Tests** | Platform-parameterized tests (Windows / Android / iOS): DLL output paths, AOT stripping paths, cross-platform path uniqueness |
-| **FirstBuildPrerequisites** | First-build prerequisite validation: AOT stripping directory, `GenerateAll` completeness, `MetadataCheck` pass |
-| **VersionLogic** | Version auto-increment correctness, `GetCurrentVersion` build/display dual format, output path sync after version bump |
-| **PipelineTypeValidation** | `HybridScriptableBuildPipeline` throws exception when passed illegal parameter types |
+| **PathResolution** | `ResolveBuildOutputPath` relative/absolute path resolution, `GetBuildOutputPath` appends version subdirectory |
+| **VersionString** | `GetCurrentVersion` build format (three integers joined by underscore) and display format (with labels) |
 | **CopyDllEdgeCases** | `CopyPatchedAOTDll` / `CopyHotUpdateDll` empty path defense, `CopyDllFileToByte` returns empty list when source directory missing |
+| **PipelineTypeValidation** | `HybridScriptableBuildPipeline` throws exception when passed illegal parameter types |
+| **EndToEnd** | `GenerateAll` end-to-end first-build artifact validation, `CopyHotUpdateDll` end-to-end .bytes and manifest generation |
+
 > Tests marked with `[Category("SlowTest")]` actually execute build commands and take longer; they are automatically skipped when the active platform does not match.
 
 #### Test Boundary Notes

@@ -4,6 +4,9 @@ using UnityEngine;
 using UniFramework.Event;
 using YooAsset;
 
+/// <summary>
+/// 示例全局游戏管理器，提供协程代理并监听场景事件以触发 YooAsset 场景加载。
+/// </summary>
 public class GameManager
 {
     private static GameManager _instance;
@@ -25,6 +28,9 @@ public class GameManager
     public MonoBehaviour Behaviour;
 
 
+    /// <summary>
+    /// 初始化全局事件监听，接收场景切换事件并转发到 YooAsset 场景加载。
+    /// </summary>
     private GameManager()
     {
         // 注册监听事件
@@ -47,6 +53,7 @@ public class GameManager
     {
         if (message is SceneEventDefine.ChangeToHomeScene)
         {
+            // 示例中主界面场景通过 YooAsset 地址加载，验证热更新资源包加载链路。
             YooAssets.LoadSceneAsync("HotUpdateScene");
         }
     }

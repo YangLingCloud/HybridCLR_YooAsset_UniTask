@@ -1,6 +1,9 @@
 ﻿
 namespace UniFramework.Utility
 {
+	/// <summary>
+	/// 轻量计时器工具，支持延迟、间隔、持续时长和最大触发次数控制。
+	/// </summary>
 	public sealed class UniTimer
 	{
 		/// <summary>
@@ -110,6 +113,7 @@ namespace UniFramework.Utility
 		/// <param name="maxTriggerTimes">最大触发次数</param>
 		public UniTimer(float delay, float interval, float duration, long maxTriggerCount)
 		{
+			// interval、duration、maxTriggerCount 使用负数表示不启用对应限制。
 			DelayTime = delay;
 			_intervalTime = interval;
 			_durationTime = duration;
@@ -145,6 +149,7 @@ namespace UniFramework.Utility
 		/// </summary>
 		public void Reset()
 		{
+			// 重置所有运行时计数器，使计时器可以重新从初始状态开始。
 			_delayTimer = 0;
 			_durationTimer = 0;
 			_intervalTimer = 0;
@@ -161,6 +166,7 @@ namespace UniFramework.Utility
 			if (IsOver || IsPause)
 				return false;
 
+			// 先累计延迟时间，延迟未到时不会触发。
 			_delayTimer += deltaTime;
 			if (_delayTimer < DelayTime)
 				return false;
@@ -188,6 +194,7 @@ namespace UniFramework.Utility
 			// 检测结束条件
 			if (_maxTriggerCount > 0)
 			{
+				// 达到最大触发次数后结束计时器。
 				_triggerCount++;
 				if (_triggerCount >= _maxTriggerCount)
 					Kill();

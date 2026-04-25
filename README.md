@@ -173,6 +173,7 @@ https://github.com/YangLingCloud/HybridCLR_YooAsset_UniTask.git
 
 - **HybridBuilderWindow** — 窗口主控制器
 - **HybridBuilderWindow.uxml** — UI 布局定义文件
+- **HybridBuilderWindow.uss** — 现代化 UI 样式表
 - **HybridBuildPipeViewerBase** — 核心功能实现基类
 
 #### 使用 HybridBuilderWindow 打包
@@ -224,7 +225,7 @@ public class HybridBuilderSettings : ScriptableObject
     public bool isUseSelfIncrementingVersions;      // 是否使用自增版本号
     public ECompressOption assetCompressOption;     // AB 包压缩方式
     public EFileNameStyle assetFileNameStyle;       // AB 包命名方式
-    public string assetEncyptionClassName;          // AB 包加密类名
+    public string assetEncryptionClassName;          // AB 包加密类名
     public EBuildinFileCopyOption assetBuildinFileCopyOption; // 首包 copy 选项
     public string assetBuildinFileCopyParams;       // copy 选项参数
     public HybridBuildOption hybridBuildOption;     // 混合构建选项
@@ -234,11 +235,18 @@ public class HybridBuilderSettings : ScriptableObject
 ### HybridRuntimeSettings 配置
 
 ```csharp
+[Serializable]
+public class PackageVersion
+{
+    public string Name;
+    public string Version;
+}
+
 public class HybridRuntimeSettings : ScriptableObject
 {
     public string HostServerIP;
     public int ReleaseBuildVersion;
-    public string Packages;
+    public List<PackageVersion> Packages;
 }
 ```
 
@@ -359,10 +367,13 @@ HybridCLR + YooAsset + UniTask 的构建流程分为两个主要阶段：**主�
 │   ├── BuildHelper.cs          # AOT 元数据检查、DLL 拷贝、APK 构建、link.xml 补全
 │   ├── HybridBuilderWindow.cs  # UI Toolkit 打包窗口主控制器
 │   ├── HybridBuilderWindow.uxml # 窗口 UI 布局
+│   ├── HybridBuilderWindow.uss # 现代化 UI 样式表（卡片布局、配色方案、按钮样式）
 │   ├── HybridBuilderSettings.cs # 构建配置 ScriptableObject + HybridBuildOption 枚举
 │   ├── HybridBuildPipeViewerBase.cs  # 构建管线查看器基类
-│   ├── HybridBuildPipeViewerBase.uxml # 查看器 UI 布局
+│   ├── HybridBuildPipeViewerBase.uxml # 查看器 UI 布局（卡片式设计）
 │   ├── HybridScriptableBuildPipelineViewer.cs # SBP 构建管线查看器
+│   ├── HybridPaths.cs          # 集中管理路径常量（AOT/热更 DLL 目录、link.xml、清单文件名）
+│   ├── HybridRuntimeSettingsMigrator.cs # 旧版 Packages JSON 字段自动迁移
 │   ├── SceneHelper.cs          # 场景工具
 │   ├── BuildPipelineTask/      # 重写的打包流水线 Task
 │   │   └── TaskBuildScript_SBP.cs  # SBP 自定义构建任务（脚本打包）
@@ -501,14 +512,11 @@ HybridLauncher → GameManager → PatchOperation（8 步状态机）
 
 | 测试类别 | 说明 |
 |---|---|
-| **BuildConfig** | HybridCLR 配置存在性、热更新/AOT 程序集列表、构建场景列表、工程路径合法性 |
-| **BuilderSettings** | `HybridBuilderSettings` 资产存在性、`RuntimeSettings` 关联、构建输出路径解析、版本号格式 |
-| **RuntimeSettings** | `HybridRuntimeSettings` 资产存在性、`HostServerIP` 配置 |
-| **Platform Tests** | 平台参数化测试（Windows / Android / iOS）：DLL 输出路径、AOT 裁剪路径、跨平台路径唯一性 |
-| **FirstBuildPrerequisites** | 首次构建前置验证：AOT 裁剪目录、`GenerateAll` 完整性、`MetadataCheck` 通过性 |
-| **VersionLogic** | 版本自增正确性、`GetCurrentVersion` 构建/展示双格式、版本递增后输出路径同步变化 |
-| **PipelineTypeValidation** | `HybridScriptableBuildPipeline` 传入非法参数类型时抛出异常 |
+| **PathResolution** | `ResolveBuildOutputPath` 相对/绝对路径解析、`GetBuildOutputPath` 追加版本号子目录 |
+| **VersionString** | `GetCurrentVersion` 构建格式（三段整数下划线连接）与展示格式（含标签） |
 | **CopyDllEdgeCases** | `CopyPatchedAOTDll` / `CopyHotUpdateDll` 空路径防御、`CopyDllFileToByte` 源目录不存在时返回空列表 |
+| **PipelineTypeValidation** | `HybridScriptableBuildPipeline` 传入非法参数类型时抛出异常 |
+| **EndToEnd** | `GenerateAll` 端到端首次构建产物验证、`CopyHotUpdateDll` 端到端 .bytes 与清单生成 |
 
 > 标记 `[Category("SlowTest")]` 的测试会实际执行构建命令，耗时较长；当活跃平台不匹配时会自动跳过。
 

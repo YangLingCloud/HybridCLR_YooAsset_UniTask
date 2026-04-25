@@ -5,6 +5,9 @@ using System.Text.RegularExpressions;
 
 namespace UniFramework.Utility
 {
+	/// <summary>
+	/// 字符串转换工具，提供基础类型、列表、枚举和格式参数的解析能力。
+	/// </summary>
 	public static class StringConvert
 	{
 		/// <summary>
@@ -38,6 +41,7 @@ namespace UniFramework.Utility
 			List<T> result = new List<T>();
 			if (!String.IsNullOrEmpty(str))
 			{
+				// 先按分隔符切分，再逐项转换为目标类型。
 				string[] splits = str.Split(separator);
 				foreach (string split in splits)
 				{
@@ -112,6 +116,7 @@ namespace UniFramework.Utility
 		public static List<float> StringToParams(string str)
 		{
 			List<float> result = new List<float>();
+			// 匹配形如 {1.5}、{-2} 的参数片段，并去掉花括号后转换为 float。
 			MatchCollection matches = REGEX.Matches(str);
 			for (int i = 0; i < matches.Count; i++)
 			{

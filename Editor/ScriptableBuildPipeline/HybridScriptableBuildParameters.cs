@@ -6,6 +6,9 @@ using BuildParameters = YooAsset.Editor.BuildParameters;
 namespace YangLing.Hybrid.Editor.ScriptableBuildPipeline
 {
 
+/// <summary>
+/// Hybrid 脚本包构建参数，扩展 YooAsset 构建参数以携带 AOT 和热更新 DLL 收集目录。
+/// </summary>
 public class HybridScriptableBuildParameters : BuildParameters
 {
         /// <summary>
@@ -75,10 +78,12 @@ public class HybridScriptableBuildParameters : BuildParameters
         /// </summary>
         public BundleBuildParameters GetBundleBuildParameters()
         {
+            // 通过 YooAsset 构建目标推导 Unity BuildTargetGroup，保证 SBP 参数与当前平台一致。
             var targetGroup = UnityEditor.BuildPipeline.GetBuildTargetGroup(BuildTarget);
             var pipelineOutputDirectory = GetPipelineOutputDirectory();
             var buildParams = new BundleBuildParameters(BuildTarget, targetGroup, pipelineOutputDirectory);
 
+            // YooAsset 的压缩枚举需要转换为 Unity SBP 的 BuildCompression。
             if (CompressOption == ECompressOption.Uncompressed)
                 buildParams.BundleCompression = UnityEngine.BuildCompression.Uncompressed;
             else if (CompressOption == ECompressOption.LZMA)
@@ -91,6 +96,7 @@ public class HybridScriptableBuildParameters : BuildParameters
             if (StripUnityVersion)
                 buildParams.ContentBuildFlags |= UnityEditor.Build.Content.ContentBuildFlags.StripUnityVersion;
 
+            // 类型树相关选项直接透传给 SBP，控制资源包体积、加载性能和兼容性。
             if (DisableWriteTypeTree)
                 buildParams.ContentBuildFlags |= UnityEditor.Build.Content.ContentBuildFlags.DisableWriteTypeTree;
 

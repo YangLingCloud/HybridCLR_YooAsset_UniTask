@@ -5,6 +5,9 @@ using UnityEngine;
 using UnityEngine.UI;
 using UniFramework.Event;
 
+/// <summary>
+/// 补丁更新窗口控制器，监听补丁流程事件并展示进度、错误提示和用户重试入口。
+/// </summary>
 public class PatchWindow : MonoBehaviour
 {
     /// <summary>
@@ -25,6 +28,9 @@ public class PatchWindow : MonoBehaviour
             }
         }
 
+        /// <summary>
+        /// 绑定克隆出来的对话框对象和按钮回调。
+        /// </summary>
         public void Create(GameObject cloneObject)
         {
             _cloneObject = cloneObject;
@@ -32,6 +38,10 @@ public class PatchWindow : MonoBehaviour
             _btnOK = cloneObject.transform.Find("btn_ok").GetComponent<Button>();
             _btnOK.onClick.AddListener(OnClickYes);
         }
+
+        /// <summary>
+        /// 显示对话框并记录确认按钮回调。
+        /// </summary>
         public void Show(string content, System.Action clickOK)
         {
             _content.text = content;
@@ -39,12 +49,20 @@ public class PatchWindow : MonoBehaviour
             _cloneObject.SetActive(true);
             _cloneObject.transform.SetAsLastSibling();
         }
+
+        /// <summary>
+        /// 隐藏对话框并清理本次回调。
+        /// </summary>
         public void Hide()
         {
             _content.text = string.Empty;
             _clickOK = null;
             _cloneObject.SetActive(false);
         }
+
+        /// <summary>
+        /// 处理确认按钮点击。
+        /// </summary>
         private void OnClickYes()
         {
             _clickOK?.Invoke();
@@ -60,6 +78,9 @@ public class PatchWindow : MonoBehaviour
     private Slider _slider;
     private Text _tips;
 
+    /// <summary>
+    /// 初始化补丁窗口 UI 引用并注册补丁事件监听。
+    /// </summary>
     void Awake()
     {
         _slider = transform.Find("UIWindow/Slider").GetComponent<Slider>();
@@ -76,6 +97,10 @@ public class PatchWindow : MonoBehaviour
         _eventGroup.AddListener<PatchEventDefine.PackageManifestUpdateFailed>(OnHandleEventMessage);
         _eventGroup.AddListener<PatchEventDefine.WebFileDownloadFailed>(OnHandleEventMessage);
     }
+
+    /// <summary>
+    /// 窗口销毁时移除所有事件监听，避免重复导入示例或切换场景后残留回调。
+    /// </summary>
     void OnDestroy()
     {
         _eventGroup.RemoveAllListener();
@@ -90,6 +115,7 @@ public class PatchWindow : MonoBehaviour
         {
             System.Action callback = () =>
             {
+                // 用户点击确认后通知状态机重新执行初始化节点。
                 UserEventDefine.UserTryInitialize.SendEventMessage();
             };
             ShowMessageBox($"Failed to initialize package !", callback);
@@ -105,6 +131,7 @@ public class PatchWindow : MonoBehaviour
             var msg = message as PatchEventDefine.FoundUpdateFiles;
             System.Action callback = () =>
             {
+                // 用户确认后才开始下载网络文件，保留下载前提示和磁盘空间检查扩展点。
                 UserEventDefine.UserBeginDownloadWebFiles.SendEventMessage();
             };
             float sizeMB = msg.TotalSizeBytes / 1048576f;
@@ -115,6 +142,7 @@ public class PatchWindow : MonoBehaviour
         else if (message is PatchEventDefine.DownloadUpdate)
         {
             var msg = message as PatchEventDefine.DownloadUpdate;
+            // 进度条按文件数量推进，文本同时展示已下载大小和总大小。
             _slider.value = (float)msg.CurrentDownloadCount / msg.TotalDownloadCount;
             string currentSizeMB = (msg.CurrentDownloadSizeBytes / 1048576f).ToString("f1");
             string totalSizeMB = (msg.TotalDownloadSizeBytes / 1048576f).ToString("f1");
@@ -124,6 +152,7 @@ public class PatchWindow : MonoBehaviour
         {
             System.Action callback = () =>
             {
+                // 版本请求失败通常是网络或服务器目录问题，用户确认后重试版本请求。
                 UserEventDefine.UserTryRequestPackageVersion.SendEventMessage();
             };
             ShowMessageBox($"Failed to request package version, please check the network status.", callback);
@@ -132,6 +161,7 @@ public class PatchWindow : MonoBehaviour
         {
             System.Action callback = () =>
             {
+                // 清单更新失败后重试清单更新，不需要重新初始化资源包。
                 UserEventDefine.UserTryUpdatePackageManifest.SendEventMessage();
             };
             ShowMessageBox($"Failed to update patch manifest, please check the network status.", callback);
@@ -141,6 +171,7 @@ public class PatchWindow : MonoBehaviour
             var msg = message as PatchEventDefine.WebFileDownloadFailed;
             System.Action callback = () =>
             {
+                // 下载失败后重新走创建下载器流程，避免复用失败状态。
                 UserEventDefine.UserTryDownloadWebFiles.SendEventMessage();
             };
             ShowMessageBox($"Failed to download file : {msg.FileName}", callback);

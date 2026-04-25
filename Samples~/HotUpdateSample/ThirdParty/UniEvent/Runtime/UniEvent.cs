@@ -5,14 +5,23 @@ using UnityEngine;
 
 namespace UniFramework.Event
 {
+	/// <summary>
+	/// 轻量级全局事件系统，支持即时广播和延迟到下一帧广播。
+	/// </summary>
 	public static class UniEvent
 	{
+		/// <summary>
+		/// 延迟事件包装数据，记录事件发送帧、事件 ID 和事件消息体。
+		/// </summary>
 		private class PostWrapper
 		{
 			public int PostFrame;
 			public int EventID;
 			public IEventMessage Message;
 
+			/// <summary>
+			/// 释放包装对象时重置内部字段。
+			/// </summary>
 			public void OnRelease()
 			{
 				PostFrame = 0;
@@ -39,6 +48,7 @@ namespace UniFramework.Event
 				// 创建驱动器
 				_isInitialize = true;
 				_driver = new UnityEngine.GameObject($"[{nameof(UniEvent)}]");
+				// 驱动器负责每帧调用 UniEvent.Update，处理延迟事件队列。
 				_driver.AddComponent<UniEventDriver>();
 				UnityEngine.Object.DontDestroyOnLoad(_driver);
 				UniLogger.Log($"{nameof(UniEvent)} initalize !");
@@ -71,6 +81,7 @@ namespace UniFramework.Event
 				var wrapper = _postingList[i];
 				if (UnityEngine.Time.frameCount > wrapper.PostFrame)
 				{
+					// 延迟事件至少跨过一帧后再派发，避免在当前调用栈内立即触发监听。
 					SendMessage(wrapper.EventID, wrapper.Message);
 					_postingList.RemoveAt(i);
 				}
@@ -117,7 +128,10 @@ namespace UniFramework.Event
 			if (_listeners.ContainsKey(eventId) == false)
 				_listeners.Add(eventId, new LinkedList<Action<IEventMessage>>());
 			if (_listeners[eventId].Contains(listener) == false)
+			{
+				// 同一事件 ID 下同一个监听函数只注册一次。
 				_listeners[eventId].AddLast(listener);
+			}
 		}
 
 
@@ -176,6 +190,7 @@ namespace UniFramework.Event
 				var currentNode = listeners.Last;
 				while (currentNode != null)
 				{
+					// 从链表尾部向前派发，允许监听内部移除后续节点时降低遍历影响。
 					currentNode.Value.Invoke(message);
 					currentNode = currentNode.Previous;
 				}
@@ -197,6 +212,7 @@ namespace UniFramework.Event
 		public static void PostMessage(int eventId, IEventMessage message)
 		{
 			var wrapper = new PostWrapper();
+			// 保存当前帧号，Update 中检测到下一帧后再执行广播。
 			wrapper.PostFrame = UnityEngine.Time.frameCount;
 			wrapper.EventID = eventId;
 			wrapper.Message = message;

@@ -1,11 +1,11 @@
-# AGENTS.md — com.yanglingyun.hyu v3.1.2
+# AGENTS.md — com.yanglingyun.hyu v3.1.3
 
 ## Project Overview
 
 This repository is a **pure Unity Package (UPM) root**, not a Unity project.
 
 - Package name: `com.yanglingyun.hyu`
-- Version: 3.1.2
+- Version: 3.1.3
 - Minimum Unity: 2022.3
 - Domain: HybridCLR + YooAsset hot-update build toolchain
 - Target platforms: Windows, Android, iOS
@@ -140,14 +140,14 @@ No `?path=` suffix needed — the repo root is the package root.
   - `ReleaseBuildVersion` / `AssetBuildVersion` / `ScriptBuildVersion` — Version numbers
   - `buildOutputPath` — Build output path (supports relative paths, resolved via `ResolveBuildOutputPath()`)
   - `isClearBuildCache` / `isUseAssetDependDB` / `isUseSelfIncrementingVersions` — Build options
-  - `assetCompressOption` / `assetFileNameStyle` / `assetEncyptionClassName` — YooAsset packaging options
+  - `assetCompressOption` / `assetFileNameStyle` / `assetEncryptionClassName` — YooAsset packaging options
   - `assetBuildinFileCopyOption` / `assetBuildinFileCopyParams` — Built-in file copy options
   - `hybridBuildOption` — Hybrid build option (`HybridBuildOption` enum: None/BuildAll/BuildAsset/BuildScript/BuildApplication)
 
 - **`HybridRuntimeSettings`** (Runtime/) — Runtime config ScriptableObject:
   - `HostServerIP` — Resource server address
   - `ReleaseBuildVersion` — Release version
-  - `Packages` — Package names and version info
+  - `Packages` — `List<PackageVersion>` (structured package name + version list, migrated from legacy JSON string via `HybridRuntimeSettingsMigrator`)
 
 - **`HybridBuilderWindow`** — UI Toolkit build window controller
 - **`HybridBuildPipeViewerBase`** — Build pipeline viewer base class
@@ -155,6 +155,8 @@ No `?path=` suffix needed — the repo root is the package root.
 - **`TaskBuildScript_SBP`** — SBP custom build task (script packaging flow)
 - **`HybridScriptableBuildPipeline`** — SBP pipeline implementation
 - **`HybridScriptableBuildParameters`** — SBP build parameter definition
+- **`HybridPaths`** — Centralized path/filename constants (eliminates magic strings across the codebase)
+- **`HybridRuntimeSettingsMigrator`** — One-time migration from legacy `Packages` JSON string to `List<PackageVersion>`
 - **`SceneHelper`** — Scene utilities
 
 ### Samples~/HotUpdateSample/Editor/
@@ -193,11 +195,11 @@ This repository is package source code. Build and test execution happens inside 
 - Type: NUnit EditMode tests
 - Assembly: `com.yanglingyun.hyu.Tests.Editor` (requires `UNITY_INCLUDE_TESTS`)
 - Coverage:
-  - BuildConfig — HybridCLR config, assembly lists, scene list, path validity
-  - BuilderSettings — Asset existence, RuntimeSettings association, output path resolution, version format
-  - RuntimeSettings — Asset existence, HostServerIP config
-  - Platform Tests — Parameterized (Windows/Android/iOS): DLL paths, AOT strip paths, cross-platform uniqueness
-  - FirstBuildPrerequisites — AOT strip directory, GenerateAll completeness, MetadataCheck pass
+  - PathResolution — `ResolveBuildOutputPath` relative/absolute path resolution, `GetBuildOutputPath` version subdirectory
+  - VersionString — `GetCurrentVersion` build format (three integers joined by underscore) and display format (with labels)
+  - CopyDllEdgeCases — Empty path defense, source directory missing returns empty list
+  - PipelineTypeValidation — `HybridScriptableBuildPipeline` rejects invalid parameter types
+  - EndToEnd — `GenerateAll` first-build artifact validation, `CopyHotUpdateDll` .bytes and manifest generation
 - Tests marked `[Category("SlowTest")]` execute actual build commands and take longer
 
 ## Code Conventions
@@ -281,7 +283,7 @@ The following filenames have spelling inconsistencies. When modifying, keep `.me
 ### Version Number Format
 
 - Three-segment: `ReleaseBuildVersion_AssetBuildVersion_ScriptBuildVersion`
-- Display format: `Realse:{r} AssetPakcage:{a} ScriptPackge:{s}` (note existing typos in code: `Realse`, `Pakcage`, `Packge`)
+- Display format: `Release:{r} AssetPackage:{a} ScriptPackage:{s}`
 
 ### Version Management Rules
 

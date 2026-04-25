@@ -229,10 +229,16 @@ namespace HybridCLR.Tests.Editor
 
         #region Helpers
 
+        /// <summary>
+        /// 用于验证 HybridScriptableBuildPipeline 拒绝非 Hybrid 参数类型的假参数类。
+        /// </summary>
         private class FakeBuildParameters : YooAsset.Editor.BuildParameters
         {
         }
 
+        /// <summary>
+        /// 查找当前工程中的 HybridBuilderSettings 测试资产，不存在时跳过依赖该资产的测试。
+        /// </summary>
         private static HybridBuilderSettings RequireBuilderSettings()
         {
             var guid = AssetDatabase.FindAssets("t:HybridBuilderSettings").FirstOrDefault();
@@ -251,6 +257,9 @@ namespace HybridCLR.Tests.Editor
             return settings;
         }
 
+        /// <summary>
+        /// 重建临时目录，确保测试开始时目录内容为空。
+        /// </summary>
         private static void RecreateDirectory(string path)
         {
             if (Directory.Exists(path))

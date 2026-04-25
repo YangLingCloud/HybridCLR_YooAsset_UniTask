@@ -11,6 +11,9 @@ using YooAsset.Editor;
 namespace YangLing.Hybrid.Editor
 {
 
+/// <summary>
+/// Hybrid 构建模式，用于描述一次构建任务需要执行的资产、脚本和应用打包范围。
+/// </summary>
 public enum HybridBuildOption
 {
     /// <summary>
@@ -40,10 +43,16 @@ public enum HybridBuildOption
     BuildApplication,
 }
 
+/// <summary>
+/// Hybrid Builder 构建配置资产，保存资源包、脚本包、输出目录、版本号和 YooAsset 构建参数。
+/// </summary>
 [CreateAssetMenu(fileName = "HybridBuilderSettings", menuName = "Scriptable Objects/HybridBuilderSettings")]
 [UnityEngine.Scripting.APIUpdating.MovedFrom(true, null, null, "HybridBuilderSettings")]
 public class HybridBuilderSettings : ScriptableObject
 {
+    /// <summary>
+    /// ScriptableObject 启用时初始化默认输出目录，保证新建配置资产可以直接参与构建。
+    /// </summary>
     void OnEnable()
     {
         if (string.IsNullOrEmpty(_buildOutputPath))
@@ -58,6 +67,7 @@ public class HybridBuilderSettings : ScriptableObject
     /// </summary>
     private void SetField<T>(ref T field, T value)
     {
+        // 相同值不重复写回，避免 UI 刷新或 OnEnable 阶段产生无意义的 dirty 标记。
         if (EqualityComparer<T>.Default.Equals(field, value))
             return;
         field = value;
@@ -101,6 +111,7 @@ public class HybridBuilderSettings : ScriptableObject
     /// </summary>
     public string GetBuildOutputPath()
     {
+        // YooAsset 输出目录按 Release 版本号分层，方便主包版本与热更新包版本隔离。
         var resolvedPath = ResolveBuildOutputPath();
         return Path.Combine(resolvedPath, _releaseBuildVersion.ToString());
     }
@@ -142,6 +153,7 @@ public class HybridBuilderSettings : ScriptableObject
                     "PatchedAOTDLLFolder is not assigned");
                 return string.Empty;
             }
+            // 返回 Assets 相对路径，后续构建任务会再转换为项目根下的绝对路径。
             var patchedAOTDLLPath = AssetDatabase.GetAssetPath(_patchedAOTDLLFolder);
             return patchedAOTDLLPath;
         }
@@ -169,6 +181,7 @@ public class HybridBuilderSettings : ScriptableObject
                     "HotUpdateDLLFolder is not assigned");
                 return string.Empty;
             }
+            // 返回 YooAsset Collector 使用的 Assets 相对路径。
             var hotUpdateDLLPath = AssetDatabase.GetAssetPath(_hotUpdateDLLFolder);
             return hotUpdateDLLPath;
         }
@@ -317,11 +330,13 @@ public class HybridBuilderSettings : ScriptableObject
         var buildVersion = string.Empty;
         if (isBuild)
         {
+            // 构建版本用于目录和包版本标识，必须保持三段数字下划线格式。
             buildVersion =
                 $"{_releaseBuildVersion}_{_assetBuildVersion}_{_scriptBuildVersion}";
         }
         else
         {
+            // 展示版本用于编辑器窗口阅读，保留标签以降低误读版本段的概率。
             buildVersion =
                 $"Release:{_releaseBuildVersion} AssetPackage:{_assetBuildVersion} ScriptPackage:{_scriptBuildVersion}";
         }

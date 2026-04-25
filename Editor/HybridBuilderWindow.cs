@@ -10,6 +10,9 @@ using YooAsset.Editor;
 namespace YangLing.Hybrid.Editor
 {
 
+/// <summary>
+/// Hybrid Builder 编辑器窗口，负责加载构建配置、运行时配置，并承载 YooAsset 构建流水线视图。
+/// </summary>
 public class HybridBuilderWindow : EditorWindow
 {
     private HybridBuilderSettings _hybridBuilderSettings;
@@ -21,6 +24,9 @@ public class HybridBuilderWindow : EditorWindow
     private ToolbarMenu _hybridRuntimeSettingMenu;
     private VisualElement _container;
 
+    /// <summary>
+    /// 打开 Hybrid Builder 编辑器窗口。
+    /// </summary>
     [MenuItem("HybridTool/Hybrid Builder", false, 102)]
     public static void OpenWindow()
     {
@@ -29,6 +35,9 @@ public class HybridBuilderWindow : EditorWindow
         window.minSize = new Vector2(800, 600);
     }
 
+    /// <summary>
+    /// 创建 UI Toolkit 界面并绑定构建配置、运行时配置和构建流水线视图。
+    /// </summary>
     public void CreateGUI()
     {
         try
@@ -52,6 +61,7 @@ public class HybridBuilderWindow : EditorWindow
             var hybridBuilderSettings = FindAllAssets<HybridBuilderSettings>();
             if (hybridBuilderSettings.Count == 0)
             {
+                // 没有构建配置时显示空状态，不抛异常，避免窗口打开失败。
                 ShowEmptyState(_toolbar, "No HybridBuilderSettings found",
                     "Please create a HybridBuilderSettings asset first.");
                 return;
@@ -79,6 +89,7 @@ public class HybridBuilderWindow : EditorWindow
             _hybridRuntimeSettings = FindAllAssets<HybridRuntimeSettings>();
             if (_hybridRuntimeSettings.Count == 0)
             {
+                // 运行时配置缺失时仍保持窗口可见，方便用户按提示补齐配置资产。
                 ShowEmptyState(_toolbar, "No HybridRuntimeSettings found",
                     "Please create a HybridRuntimeSettings asset first.");
                 return;
@@ -108,6 +119,9 @@ public class HybridBuilderWindow : EditorWindow
         }
     }
 
+    /// <summary>
+    /// 在工具栏区域显示缺失配置提示。
+    /// </summary>
     private void ShowEmptyState(VisualElement parent, string title, string message)
     {
         var container = new VisualElement();
@@ -127,11 +141,15 @@ public class HybridBuilderWindow : EditorWindow
         parent.Add(container);
     }
 
+    /// <summary>
+    /// 根据当前选中的构建配置刷新流水线参数面板。
+    /// </summary>
     private void RefreshBuildPipelineView()
     {
         // 清空扩展区域
         _container.Clear();
         
+        // 工具栏菜单文本始终反映当前配置资产，降低多配置项目中的误操作概率。
         _hybridBuilderSettingMenu.text = _hybridBuilderSettings.name;
         _hybridRuntimeSettingMenu.text = _hybridBuilderSettings.RuntimeSettings != null
             ? _hybridBuilderSettings.RuntimeSettings.name
@@ -152,6 +170,7 @@ public class HybridBuilderWindow : EditorWindow
         string[] guids = AssetDatabase.FindAssets($"t:{typeof(T).Name}");
         foreach (string assetGUID in guids)
         {
+            // 只接受主资产类型完全匹配的对象，避免子资产或同名脚本误入列表。
             string assetPath = AssetDatabase.GUIDToAssetPath(assetGUID);
             if (AssetDatabase.GetMainAssetTypeAtPath(assetPath) != typeof(T))
                 continue;
@@ -163,6 +182,9 @@ public class HybridBuilderWindow : EditorWindow
         return results;
     }
 
+    /// <summary>
+    /// 当构建配置尚未关联运行时配置时，自动选择第一个可用配置作为默认值。
+    /// </summary>
     private void EnsureRuntimeSettingsAssigned()
     {
         if (_hybridBuilderSettings.RuntimeSettings != null || _hybridRuntimeSettings.Count == 0)
@@ -173,6 +195,9 @@ public class HybridBuilderWindow : EditorWindow
         EditorUtility.SetDirty(_hybridBuilderSettings);
     }
 
+    /// <summary>
+    /// 运行时配置菜单点击回调，切换当前构建配置关联的 RuntimeSettings。
+    /// </summary>
     void HybridBuilderRuntimeMenuAction(DropdownMenuAction action)
     {
         var targetSetting = (HybridRuntimeSettings) action.userData;
@@ -183,6 +208,10 @@ public class HybridBuilderWindow : EditorWindow
             RefreshBuildPipelineView();
         }
     }
+
+    /// <summary>
+    /// 返回运行时配置菜单项的勾选状态。
+    /// </summary>
     private DropdownMenuAction.Status HybridRuntimeSettingMenuFun(DropdownMenuAction action)
     {
         var targetSetting = (HybridRuntimeSettings) action.userData;
@@ -193,6 +222,9 @@ public class HybridBuilderWindow : EditorWindow
     }
     
     
+    /// <summary>
+    /// 构建配置菜单点击回调，切换当前编辑的 HybridBuilderSettings。
+    /// </summary>
     void HybridBuilderSettingMenuAction(DropdownMenuAction action)
     {
         var targetSetting = (HybridBuilderSettings) action.userData;
@@ -204,6 +236,9 @@ public class HybridBuilderWindow : EditorWindow
         }
     }
 
+    /// <summary>
+    /// 返回构建配置菜单项的勾选状态。
+    /// </summary>
     private DropdownMenuAction.Status HybridBuilderSettingMenuFun(DropdownMenuAction action)
     {
         var targetSetting = (HybridBuilderSettings) action.userData;

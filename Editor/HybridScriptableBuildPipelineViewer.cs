@@ -14,6 +14,9 @@ using YangLing.Hybrid.Runtime;
 
 namespace YooAsset.Editor
 {
+    /// <summary>
+    /// ScriptableBuildPipeline 构建视图实现，负责编排脚本包、资源包和应用构建流程。
+    /// </summary>
     internal class HybridScriptableBuildPipelineViewer : HybridBuildPipeViewerBase
     {
         private HybridBuilderSettings _hybridBuilderSettings;
@@ -36,6 +39,7 @@ namespace YooAsset.Editor
                 return;
             }
 
+            // 根据构建模式拆分所需前置条件，避免无关校验阻塞单一类型构建。
             bool needMetadataCheck = option == HybridBuildOption.BuildScript ||
                                      option == HybridBuildOption.BuildAll;
             bool needScriptPath = option == HybridBuildOption.BuildScript ||
@@ -55,6 +59,9 @@ namespace YooAsset.Editor
             StartBuild();
         }
 
+        /// <summary>
+        /// 校验热更新 DLL 是否访问了已被裁剪且未补充元数据的 AOT 类型。
+        /// </summary>
         private bool ValidateMetadata()
         {
             if (BuildHelper.CheckAccessMissingMetadata())
@@ -64,6 +71,9 @@ namespace YooAsset.Editor
             return false;
         }
 
+        /// <summary>
+        /// 校验脚本包收集器中是否包含 AOT 补充 DLL 与热更新 DLL 两个必需目录。
+        /// </summary>
         private bool ValidateScriptPath()
         {
             if (CheckScriptPathExist())
@@ -75,6 +85,9 @@ namespace YooAsset.Editor
             return false;
         }
 
+        /// <summary>
+        /// 校验资源构建模式下至少选择了一个资源包。
+        /// </summary>
         private bool ValidateAssetPackages()
         {
             if (_hybridBuilderSettings.AssetPackages != null && _hybridBuilderSettings.AssetPackages.Count > 0)
@@ -84,6 +97,9 @@ namespace YooAsset.Editor
         }
 
 
+        /// <summary>
+        /// 构建当前激活平台的应用包，目前仅实现 Android APK 构建。
+        /// </summary>
         bool BuildApplication()
         {
             var activeBuildTarget = EditorUserBuildSettings.activeBuildTarget;
@@ -91,6 +107,7 @@ namespace YooAsset.Editor
             switch (activeBuildTarget)
             {
                 case BuildTarget.Android:
+                    // Android 使用 BuildHelper.BuildAPK 串起 IL2CPP 定义、link.xml 补全和 Unity BuildPipeline。
                     return BuildHelper.BuildAPK(_hybridBuilderSettings.GetBuildOutputPath(),
                         _hybridBuilderSettings.GetCurrentVersion(true));
                 case BuildTarget.StandaloneWindows64:
@@ -128,6 +145,7 @@ namespace YooAsset.Editor
             var patchedAOTDLLPathGUID = AssetDatabase.AssetPathToGUID(patchedAOTPath);
             var hotUpdateDLLPathGUID = AssetDatabase.AssetPathToGUID(hotUpdatePath);
 
+            // YooAsset Collector 以 GUID 绑定目录，通过 GUID 比较可以避免路径大小写或重命名造成误判。
             var buildPackage = AssetBundleCollectorSettingData.Setting.GetPackage(
                 _hybridBuilderSettings.ScriptPackageName);
 
@@ -165,6 +183,7 @@ namespace YooAsset.Editor
             switch (_hybridBuilderSettings.hybridBuildOption)
             {
                 case HybridBuildOption.BuildAll:
+                    // BuildAll 需要同时输出脚本包和选中的资源包。
                     foreach (var assetPackage in _hybridBuilderSettings.AssetPackages)
                     {
                         if (!BuildScriptPackage())
@@ -182,6 +201,7 @@ namespace YooAsset.Editor
 
                     break;
                 case HybridBuildOption.BuildApplication:
+                    // 应用包先构建，随后输出本次 Release 对应的脚本包和资源包。
                     if (!BuildApplication())
                     {
                         return;
@@ -202,6 +222,7 @@ namespace YooAsset.Editor
 
                     break;
                 case HybridBuildOption.BuildAsset:
+                    // 仅构建资源包时不触发脚本 DLL 编译与复制。
                     foreach (var assetPackage in _hybridBuilderSettings.AssetPackages)
                     {
                         if (!BuildAsset(assetPackage))
@@ -212,6 +233,7 @@ namespace YooAsset.Editor
 
                     break;
                 case HybridBuildOption.BuildScript:
+                    // 仅构建脚本包时只运行 RawFile 构建管线。
                     if (!BuildScriptPackage())
                     {
                         return;
@@ -222,6 +244,9 @@ namespace YooAsset.Editor
             BuildFinish();
         }
 
+        /// <summary>
+        /// 将指定包的版本号写入运行时配置。
+        /// </summary>
         void UpdatePackageVersion(string packageName,int version)
         {
             _hybridBuilderSettings.RuntimeSettings.SetPackageVersion(packageName, version.ToString());
@@ -254,14 +279,17 @@ namespace YooAsset.Editor
             switch (_hybridBuilderSettings.hybridBuildOption)
             {
                 case HybridBuildOption.BuildAsset:
+                    // 资源包构建完成后记录当前资源版本，再递增下一次构建使用的资源版本。
                     IncrementAssetPackages();
                     runtimeSettingsChanged = true;
                     break;
                 case HybridBuildOption.BuildScript:
+                    // 脚本包构建完成后记录当前脚本版本，再递增下一次构建使用的脚本版本。
                     IncrementScriptPackage();
                     runtimeSettingsChanged = true;
                     break;
                 case HybridBuildOption.BuildAll:
+                    // 同时构建时，脚本包与资源包版本都需要推进。
                     IncrementScriptPackage();
                     IncrementAssetPackages();
                     runtimeSettingsChanged = true;
@@ -280,10 +308,12 @@ namespace YooAsset.Editor
 
             if (!runtimeSettingsChanged)
             {
+                // 没有版本变化时只打开输出目录，不落盘 RuntimeSettings.json。
                 EditorUtility.RevealInFinder(_hybridBuilderSettings.GetBuildOutputPath());
                 return;
             }
 
+            // RuntimeSettings.json 写到输出根目录，运行时可通过远端 URL 获取当前 Release 的包版本配置。
             var json = JsonConvert.SerializeObject(_hybridBuilderSettings.RuntimeSettings);
             var outputRoot = _hybridBuilderSettings.ResolveBuildOutputPath();
             if (!string.IsNullOrEmpty(outputRoot))
@@ -307,9 +337,13 @@ namespace YooAsset.Editor
             EditorUtility.RevealInFinder(_hybridBuilderSettings.GetBuildOutputPath());
         }
 
+        /// <summary>
+        /// 构建脚本 RawFile 包，内部会先编译热更新 DLL 并复制 AOT/HotUpdate 字节文件。
+        /// </summary>
         bool BuildScriptPackage()
         {
             HybridScriptableBuildParameters buildParameters = new HybridScriptableBuildParameters();
+            // DLL 收集路径来自构建配置，并在 TaskBuildScript_SBP 中转为绝对路径复制文件。
             buildParameters.PatchedAOTDLLCollectPath = _hybridBuilderSettings.PatchedAOTDLLCollectPath;
             buildParameters.HotUpdateDLLCollectPath = _hybridBuilderSettings.HotUpdateDLLCollectPath;
             buildParameters.BuildOutputRoot = _hybridBuilderSettings.GetBuildOutputPath();
@@ -337,11 +371,15 @@ namespace YooAsset.Editor
             return buildResult.Success;
         }
 
+        /// <summary>
+        /// 构建指定 YooAsset 资源包。
+        /// </summary>
         bool BuildAsset(string packageName)
         {
             ScriptableBuildParameters buildParameters = new ScriptableBuildParameters();
             buildParameters.BuildOutputRoot = _hybridBuilderSettings.GetBuildOutputPath();
             
+            // 资源包使用标准 ScriptableBuildPipeline，脚本包使用自定义 HybridScriptableBuildPipeline。
             buildParameters.BuildinFileRoot = AssetBundleBuilderHelper.GetStreamingAssetsRoot();
             buildParameters.BuildPipeline = BuildPipeline.ToString();
             buildParameters.BuildBundleType = (int) EBuildBundleType.AssetBundle;

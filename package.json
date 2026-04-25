@@ -1,6 +1,6 @@
 {
   "name": "com.yanglingyun.hyu",
-  "version": "3.1.2",
+  "version": "3.1.3",
   "displayName": "HybridCLR YooAsset UniTask Builder",
   "description": "Unity热更新构建工具，整合HybridCLR、YooAsset和UniTask的编辑器构建流水线。提供一体化的热更新DLL编译、AOT元数据生成、资源打包等功能。",
   "unity": "2022.3",

@@ -16,6 +16,9 @@ using UnityEditor.Build.Reporting;
 namespace YangLing.Hybrid.Editor
 {
 
+/// <summary>
+/// Hybrid 热更新构建辅助类，集中封装 HybridCLR 前置生成、AOT 元数据检查、DLL 拷贝、APK 构建和 link.xml 补全等编辑器能力。
+/// </summary>
 public class BuildHelper
 {
     /// <summary>
@@ -23,7 +26,9 @@ public class BuildHelper
     /// </summary>
     public static string ProjectPath => HybridPaths.GetProjectRoot();
 
-    // Start is called before the first frame update
+    /// <summary>
+    /// 获取当前 Build Settings 中启用的场景路径列表，供应用构建流程传入 BuildPipeline。
+    /// </summary>
     public static string[] GetBuildScenes()
     {
         List<string> names = new List<string>();
@@ -46,8 +51,11 @@ public class BuildHelper
     /// <returns>目录存在或自动生成成功返回 true，否则返回 false</returns>
     public static bool EnsureAOTStripDirExists(string aotDir)
     {
+        // AOT 裁剪目录存在时说明 HybridCLR 前置生成链路已完成，可以直接继续后续构建。
         if (Directory.Exists(aotDir))
             return true;
+
+        // 首次构建通常还没有 HybridCLR 生成产物，此处通过弹窗把必要前置链路显式交给用户确认。
         bool autoGenerate = EditorUtility.DisplayDialog(
             "Missing HybridCLR Build Data",
             $"AOT strip directory not found:\n{aotDir}\n\n" +
@@ -59,6 +67,7 @@ public class BuildHelper
             return false;
         try
         {
+            // GenerateAll 会串起热更新 DLL 编译、link.xml 生成、AOT 裁剪 DLL 生成和桥接函数生成。
             PrebuildCommand.GenerateAll();
         }
         catch (Exception e)
@@ -69,6 +78,7 @@ public class BuildHelper
         }
         if (!Directory.Exists(aotDir))
         {
+            // 上游命令执行成功但目录仍缺失时，说明当前平台或 HybridCLR 配置仍不完整。
             Debug.unityLogger.LogError("EnsureAOTStripDirExists",
                 $"Directory still missing after Generate/All: {aotDir}");
             return false;
@@ -97,6 +107,7 @@ public class BuildHelper
         // 第2个参数hotUpdateAssNames为热更新程序集列表。对于旗舰版本，该列表需要包含DHE程序集，即SettingsUtil.HotUpdateAndDHEAssemblyNamesIncludePreserved。
         var checker = new MissingMetadataChecker(aotDir, SettingsUtil.HotUpdateAssemblyNamesIncludePreserved);
 
+        // 热更新 DLL 输出目录与热更新程序集列表必须来自当前激活平台，否则元数据检查结果不可信。
         string hotUpdateDir = SettingsUtil.GetHotUpdateDllsOutputDirByTarget(target);
         var hotUpdateDlls = SettingsUtil.HotUpdateAssemblyFilesExcludePreserved;
         if (hotUpdateDlls == null || hotUpdateDlls.Count == 0)
@@ -109,6 +120,7 @@ public class BuildHelper
         bool allPassed = true;
         foreach (var dll in hotUpdateDlls)
         {
+            // 逐个 DLL 检查，累积错误而不是首个失败即退出，便于一次性暴露所有缺失元数据问题。
             string dllPath = Path.Combine(hotUpdateDir, dll);
             if (!checker.Check(dllPath))
             {
@@ -119,6 +131,10 @@ public class BuildHelper
 
         return allPassed;
     }
+
+    /// <summary>
+    /// 菜单调试入口，使用默认 Bundles 输出目录构建 Android APK。
+    /// </summary>
     [MenuItem("HybridTool/Build APK")]
     public static void Debug_BuildAPK()
     {
@@ -141,6 +157,7 @@ public class BuildHelper
         //补全热更新预制体依赖
         BuildHelper.SupplementPrefabDependent();
         
+        // BuildPlayerOptions 显式指定场景、目标平台和输出路径，避免依赖 Unity Editor 当前面板状态。
         BuildPlayerOptions buildPlayerOptions = new BuildPlayerOptions();
         buildPlayerOptions.scenes = GetBuildScenes();
         EditorUserBuildSettings.exportAsGoogleAndroidProject = isExportProject;
@@ -189,6 +206,7 @@ public class BuildHelper
         var gs = SettingsUtil.HybridCLRSettings;
         List<string> hotUpdateDllNames = SettingsUtil.HotUpdateAssemblyNamesExcludePreserved;
 
+        // 通过 HybridCLR 的深度引用分析器，从热更新程序集反推需要补充元数据的 AOT 程序集。
         AssemblyReferenceDeepCollector collector = new AssemblyReferenceDeepCollector(
             MetaUtil.CreateHotUpdateAndAOTAssemblyResolver(EditorUserBuildSettings.activeBuildTarget,
                 hotUpdateDllNames), hotUpdateDllNames);
@@ -203,10 +221,12 @@ public class BuildHelper
         var moduleSet = new HashSet<dnlib.DotNet.ModuleDef>();
         foreach (var type in analyzer.AotGenericTypes)
         {
+            // 泛型类型引用会触发 AOT 元数据需求，按所属模块聚合避免重复写入。
             moduleSet.Add(type.Type.Module);
         }
         foreach (var method in analyzer.AotGenericMethods)
         {
+            // 泛型方法引用同样需要补充元数据，最终与类型引用合并为模块集合。
             moduleSet.Add(method.Method.Module);
         }
 
@@ -227,6 +247,9 @@ public class BuildHelper
         AssetDatabase.SaveAssets();
     }
 
+    /// <summary>
+    /// 菜单调试入口，编译热更新 DLL 后刷新 HybridCLR Settings 中的补充元数据程序集列表。
+    /// </summary>
     [MenuItem("HybridTool/Get Patched AOT Assembly List")]
     public static void Debug_GetPatchedAOTAssemblyList()
     {
@@ -235,11 +258,15 @@ public class BuildHelper
         GetPatchedAOTAssemblyListToHybridCLRSettings();
     }
 
+    /// <summary>
+    /// 将指定 DLL 从源目录复制到目标目录并改写为 .bytes 文件，返回成功复制的程序集名称列表。
+    /// </summary>
     public static List<string> CopyDllFileToByte(string[] originFileNames, string originDir, string targetDir)
     {
         List<string> bytesFiles = new List<string>();
         foreach (var originFileName in originFileNames)
         {
+            // HybridCLR 输出目录保存的是 .dll，YooAsset RawFile 收集目录需要 .bytes 后缀以避免 Unity 导入为托管程序集。
             var dllFilePath = Path.Combine(ProjectPath, originDir, $"{originFileName}.dll");
             if (!File.Exists(dllFilePath))
             {
@@ -249,6 +276,7 @@ public class BuildHelper
 
             var targetFileName = $"{originFileName}.bytes";
             var dllRawFilePath = Path.Combine(targetDir, targetFileName);
+            // 覆盖复制保证重复构建时可以刷新旧 DLL 内容。
             File.Copy(dllFilePath, dllRawFilePath, true);
             bytesFiles.Add(originFileName);
         }
@@ -273,6 +301,7 @@ public class BuildHelper
 
         var patchedAOTAssemblies = SettingsUtil.HybridCLRSettings.patchAOTAssemblies;
 
+        // 补充元数据 DLL 必须来自当前平台 IL2CPP 裁剪后的 AOT 输出目录。
         var dllOutputPath = SettingsUtil.GetAssembliesPostIl2CppStripDir(EditorUserBuildSettings.activeBuildTarget);
 
         // 检查 AOT 裁剪目录是否存在，不存在则提示自动生成
@@ -283,6 +312,7 @@ public class BuildHelper
 
         if (dllRawFileAssetNames != null && dllRawFileAssetNames.Count > 0)
         {
+            // 清单记录不带扩展名的程序集名，运行时按 RawFile 地址加载对应 .bytes 数据。
             var namesJson = JsonConvert.SerializeObject(dllRawFileAssetNames);
             File.WriteAllText(Path.Combine(rawFileCollectPath, HybridPaths.AotDllManifest), namesJson);
             AssetDatabase.Refresh();
@@ -294,6 +324,9 @@ public class BuildHelper
         }
     }
 
+    /// <summary>
+    /// 菜单调试入口，生成当前平台 AOT 裁剪 DLL 并复制到样例资源收集目录。
+    /// </summary>
     [MenuItem("HybridTool/Generate AOT DLLs and Copy")]
     public static void Debug_GenerateAOTDllListFile()
     {
@@ -309,6 +342,9 @@ public class BuildHelper
         CopyPatchedAOTDllToCollectPath(aotDllRawFileCollectPath);
     }
 
+    /// <summary>
+    /// 菜单调试入口，编译当前平台热更新 DLL 并复制到样例资源收集目录。
+    /// </summary>
     [MenuItem("HybridTool/Generate Hot-Update DLLs and Copy")]
     public static void Debug_GenerateHotUpdateDllListFile()
     {
@@ -336,6 +372,7 @@ public class BuildHelper
 
         var hotUpdateAssemblies = SettingsUtil.HotUpdateAssemblyNamesExcludePreserved;
 
+        // 热更新 DLL 输出目录由 HybridCLR 按当前平台生成，不能跨平台复用。
         var hotUpdateOutputPath =
             SettingsUtil.GetHotUpdateDllsOutputDirByTarget(EditorUserBuildSettings.activeBuildTarget);
 
@@ -344,6 +381,7 @@ public class BuildHelper
 
         if (dllRawFileAssetNames != null && dllRawFileAssetNames.Count > 0)
         {
+            // 运行时先读取清单，再按清单顺序加载每个热更新程序集。
             var json = JsonConvert.SerializeObject(dllRawFileAssetNames);
             File.WriteAllText(Path.Combine(rawFileCollectPath, HybridPaths.HotUpdateDllManifest), json);
             AssetDatabase.Refresh();
@@ -357,6 +395,9 @@ public class BuildHelper
 
 
     //[UnityEditor.UnityEditor.MenuItem("整合工具/删除本地沙盒文件夹")]
+    /// <summary>
+    /// 删除项目根目录下的 YooAsset 沙盒目录，用于调试本地缓存清理流程。
+    /// </summary>
     public static void DeleteSandBoxDirectory()
     {
         var path = $"{ProjectPath}/SandBox";
@@ -368,6 +409,9 @@ public class BuildHelper
         Debug.unityLogger.Log("BuildHelper", "Sandbox directory deleted successfully");
     }
 
+    /// <summary>
+    /// 菜单调试入口，扫描热更新预制体依赖并补充 Assets/link.xml。
+    /// </summary>
     [MenuItem("HybridTool/Supplement Prefab Dependencies")]
     public static void Debug_SupplementPrefabDependent()
     {
@@ -376,6 +420,9 @@ public class BuildHelper
         EditorUtility.ClearProgressBar();
     }
 
+    /// <summary>
+    /// 扫描热更新资源中的预制体组件，将 UnityEngine/TMPro 类型写入 link.xml 防止 IL2CPP 裁剪。
+    /// </summary>
     public static void SupplementPrefabDependent()
     {
         try
@@ -388,6 +435,9 @@ public class BuildHelper
         }
     }
 
+    /// <summary>
+    /// 预制体依赖补全的实际实现，负责收集类型、合并已有 link.xml 并写入最终文件。
+    /// </summary>
     private static void SupplementPrefabDependentInternal()
     {
         string[] dirs = ResolveHotUpdateAssetsSearchFolders();
@@ -408,6 +458,7 @@ public class BuildHelper
         var discoveredTypes = new Dictionary<string, HashSet<string>>();
         for (int i = 0; i < assetGuids.Length; i++)
         {
+            // 只读取 GameObject 根对象，再通过 GetComponentsInChildren 覆盖嵌套节点和隐藏节点。
             string path = AssetDatabase.GUIDToAssetPath(assetGuids[i]);
             var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(path);
             if (prefab == null)
@@ -419,6 +470,7 @@ public class BuildHelper
                 // 防御：Missing Script 会导致 component 为 null
                 if (component == null)
                     continue;
+                // 组件类型及其公开属性中的 UnityEngine/TMPro 类型都可能在反射或序列化路径中被访问。
                 CollectPreserveType(component.GetType(), discoveredTypes);
             }
         }
@@ -491,6 +543,7 @@ public class BuildHelper
             {
                 if (existingTypes[assemblyName].Contains(typeName))
                     continue;
+                // 新类型统一 preserve=all，优先保证热更新预制体运行安全。
                 var typeNode = xml.CreateElement("type");
                 typeNode.SetAttribute("fullname", typeName);
                 typeNode.SetAttribute("preserve", "all");
@@ -506,6 +559,9 @@ public class BuildHelper
         Debug.unityLogger.Log($"[SupplementPrefabDependent] Done. Added {addedCount} type entries to link.xml");
     }
 
+    /// <summary>
+    /// 解析所有可能的 HotUpdateAssets 搜索目录，兼容包开发态和 Sample 导入态路径。
+    /// </summary>
     private static string[] ResolveHotUpdateAssetsSearchFolders()
     {
         var dirs = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
@@ -535,6 +591,7 @@ public class BuildHelper
     {
         if (type == null || string.IsNullOrEmpty(type.FullName))
             return;
+        // 只处理 UnityEngine/TMPro 类型，避免把业务脚本或第三方程序集全部写入 link.xml。
         if (!type.FullName.StartsWith("UnityEngine") && !type.FullName.StartsWith("TMPro"))
             return;
         var assemblyName = type.Assembly.GetName().Name;
@@ -564,6 +621,7 @@ public class BuildHelper
         {
             foreach (var prop in type.GetProperties())
             {
+                // 属性类型可能是数组，保留时应记录数组元素类型而不是数组包装类型。
                 var propType = prop.PropertyType;
                 if (propType == null || string.IsNullOrEmpty(propType.FullName))
                     continue;
@@ -584,6 +642,7 @@ public class BuildHelper
         }
 
         var arr = list.ToArray();
+        // 反射结果按组件类型缓存，避免大量预制体扫描时重复分析相同组件类型。
         _preservablePropertyCache[type] = arr;
         return arr;
     }
@@ -617,6 +676,7 @@ public class BuildHelper
         {
             try
             {
+                // 若 HybridCLR 未生成 link.xml，则复用 Assets/link.xml 中已有的人工保留配置。
                 var xml = new XmlDocument();
                 xml.Load(outputPath);
                 if (xml.DocumentElement != null)

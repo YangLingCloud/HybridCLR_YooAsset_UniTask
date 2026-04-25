@@ -5,6 +5,28 @@ All notable changes to this package are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.1.3] - 2026-04-25
+
+### Added
+
+- 全量 XML doc 注释：为 Editor/、Runtime/、Samples~/ 下所有公开类、方法、枚举值补充中文 `<summary>` 标签
+- 关键逻辑行内注释：在 BuildHelper、HybridBuilderSettings、HybridBuilderWindow、HybridBuildPipeViewerBase 等核心文件的非显而易见逻辑处添加行内注释
+
+### Changed
+
+- README.md / README_EN.md：
+  - 项目结构树补充 `HybridPaths.cs`、`HybridBuilderWindow.uss`、`HybridRuntimeSettingsMigrator.cs`
+  - `HybridBuilderSettings` 代码片段修正 `assetEncyptionClassName` → `assetEncryptionClassName`
+  - `HybridRuntimeSettings` 代码片段更新为 `List<PackageVersion>` 结构
+  - 测试覆盖表格同步为当前 8 个测试用例（5 个类别）
+  - 核心组件列表补充 `HybridBuilderWindow.uss`
+- AGENTS.md：
+  - 修正 `assetEncyptionClassName` → `assetEncryptionClassName`
+  - `HybridRuntimeSettings.Packages` 描述更新为 `List<PackageVersion>`
+  - 补充 `HybridPaths`、`HybridRuntimeSettingsMigrator` 到 Key Classes
+  - 测试覆盖列表同步为当前 5 个类别
+  - 版本显示格式移除已修复的拼写错误注记
+
 ## [3.1.2] - 2026-04-25
 
 ### Fixed
