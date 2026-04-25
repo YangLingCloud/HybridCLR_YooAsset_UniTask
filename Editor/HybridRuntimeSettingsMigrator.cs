@@ -30,7 +30,7 @@ internal static class HybridRuntimeSettingsMigrator
             {
                 EditorUtility.SetDirty(settings);
                 changed = true;
-                Debug.Log($"[HybridRuntimeSettingsMigrator] Migrated legacy Packages JSON: {path}");
+                Debug.unityLogger.Log("HybridRuntimeSettingsMigrator", $"Migrated legacy Packages JSON: {path}");
             }
         }
 

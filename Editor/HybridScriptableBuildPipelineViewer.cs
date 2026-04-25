@@ -226,54 +226,54 @@ namespace YooAsset.Editor
         {
             _hybridBuilderSettings.RuntimeSettings.SetPackageVersion(packageName, version.ToString());
         }
+
+        /// <summary>
+        /// 推进脚本包版本：将当前版本写入 RuntimeSettings 后自增。
+        /// </summary>
+        void IncrementScriptPackage()
+        {
+            UpdatePackageVersion(_hybridBuilderSettings.ScriptPackageName, _hybridBuilderSettings.ScriptBuildVersion);
+            _hybridBuilderSettings.ScriptBuildVersion++;
+        }
+
+        /// <summary>
+        /// 推进所有资源包版本：将当前版本写入 RuntimeSettings 后自增。
+        /// </summary>
+        void IncrementAssetPackages()
+        {
+            foreach (var assetPackage in _hybridBuilderSettings.AssetPackages)
+            {
+                UpdatePackageVersion(assetPackage, _hybridBuilderSettings.AssetBuildVersion);
+            }
+            _hybridBuilderSettings.AssetBuildVersion++;
+        }
+
         void BuildFinish()
         {
             bool runtimeSettingsChanged = false;
             switch (_hybridBuilderSettings.hybridBuildOption)
             {
                 case HybridBuildOption.BuildAsset:
-                    foreach (var assetPackage in _hybridBuilderSettings.AssetPackages)
-                    {
-                        UpdatePackageVersion(assetPackage, _hybridBuilderSettings.AssetBuildVersion);
-                    }
-
-                    _hybridBuilderSettings.AssetBuildVersion++;
+                    IncrementAssetPackages();
                     runtimeSettingsChanged = true;
                     break;
                 case HybridBuildOption.BuildScript:
-
-                    UpdatePackageVersion(_hybridBuilderSettings.ScriptPackageName,_hybridBuilderSettings.ScriptBuildVersion);
-
-                    _hybridBuilderSettings.ScriptBuildVersion++;
+                    IncrementScriptPackage();
                     runtimeSettingsChanged = true;
                     break;
                 case HybridBuildOption.BuildAll:
-                    UpdatePackageVersion(_hybridBuilderSettings.ScriptPackageName,_hybridBuilderSettings.ScriptBuildVersion);
-                    _hybridBuilderSettings.ScriptBuildVersion++;
-                    
-                    foreach (var assetPackage in _hybridBuilderSettings.AssetPackages)
-                    {
-                        UpdatePackageVersion(assetPackage, _hybridBuilderSettings.AssetBuildVersion);
-                    }
-
-                    _hybridBuilderSettings.AssetBuildVersion++;
+                    IncrementScriptPackage();
+                    IncrementAssetPackages();
                     runtimeSettingsChanged = true;
                     break;
                 case HybridBuildOption.BuildApplication:
-                    //为了保证一次打包所有的包Release版本一致，应该在打完所有包之后增加Release版本
+                    // 为了保证一次打包所有的包 Release 版本一致，应该在打完所有包之后增加 Release 版本
                     _hybridBuilderSettings.RuntimeSettings.ReleaseBuildVersion =
                         _hybridBuilderSettings.ReleaseBuildVersion;
                     _hybridBuilderSettings.ReleaseBuildVersion++;
-                    
-                    UpdatePackageVersion(_hybridBuilderSettings.ScriptPackageName,_hybridBuilderSettings.ScriptBuildVersion);
-                    _hybridBuilderSettings.ScriptBuildVersion++;
-                    
-                    foreach (var assetPackage in _hybridBuilderSettings.AssetPackages)
-                    {
-                        UpdatePackageVersion(assetPackage, _hybridBuilderSettings.AssetBuildVersion);
-                    }
 
-                    _hybridBuilderSettings.AssetBuildVersion++;
+                    IncrementScriptPackage();
+                    IncrementAssetPackages();
                     runtimeSettingsChanged = true;
                     break;
             }

@@ -49,7 +49,7 @@ public class HybridBuilderWindow : EditorWindow
             _container = root.Q("Container");
 
 
-            var hybridBuilderSettings = FindAllHybridBuilderSettings();
+            var hybridBuilderSettings = FindAllAssets<HybridBuilderSettings>();
             if (hybridBuilderSettings.Count == 0)
             {
                 ShowEmptyState(_toolbar, "No HybridBuilderSettings found",
@@ -76,7 +76,7 @@ public class HybridBuilderWindow : EditorWindow
                 }
             }
 
-            _hybridRuntimeSettings = FindAllHybridRuntimeSettings();
+            _hybridRuntimeSettings = FindAllAssets<HybridRuntimeSettings>();
             if (_hybridRuntimeSettings.Count == 0)
             {
                 ShowEmptyState(_toolbar, "No HybridRuntimeSettings found",
@@ -144,49 +144,23 @@ public class HybridBuilderWindow : EditorWindow
     }
 
     /// <summary>
-    /// 查找工程下所有HybridBuilderSetting类型文件
+    /// 查找工程下指定 ScriptableObject 类型的所有资产。
     /// </summary>
-    /// <returns></returns>
-    /// <exception cref="Exception"></exception>
-    List<HybridBuilderSettings> FindAllHybridBuilderSettings()
+    private static List<T> FindAllAssets<T>() where T : ScriptableObject
     {
-        var hybridBuilderSettings = new List<HybridBuilderSettings>();
-        string[] guids = AssetDatabase.FindAssets($"t:{nameof(HybridBuilderSettings)}");
+        var results = new List<T>();
+        string[] guids = AssetDatabase.FindAssets($"t:{typeof(T).Name}");
         foreach (string assetGUID in guids)
         {
             string assetPath = AssetDatabase.GUIDToAssetPath(assetGUID);
-            var assetType = AssetDatabase.GetMainAssetTypeAtPath(assetPath);
-            if (assetType == typeof(HybridBuilderSettings))
-            {
-                var hybridBuilderSetting = AssetDatabase.LoadAssetAtPath<HybridBuilderSettings>(assetPath);
-                if (hybridBuilderSetting != null)
-                    hybridBuilderSettings.Add(hybridBuilderSetting);
-            }
-        }
+            if (AssetDatabase.GetMainAssetTypeAtPath(assetPath) != typeof(T))
+                continue;
 
-        return hybridBuilderSettings;
-    }
-    
-    /// <summary>
-    /// 查找工程下所有HybridRuntimeSettings类型文件
-    /// </summary>
-    List<HybridRuntimeSettings> FindAllHybridRuntimeSettings()
-    {
-        var hybridRuntimeSettings = new List<HybridRuntimeSettings>();
-        string[] guids = AssetDatabase.FindAssets($"t:{nameof(HybridRuntimeSettings)}");
-        foreach (string assetGUID in guids)
-        {
-            string assetPath = AssetDatabase.GUIDToAssetPath(assetGUID);
-            var assetType = AssetDatabase.GetMainAssetTypeAtPath(assetPath);
-            if (assetType == typeof(HybridRuntimeSettings))
-            {
-                var hybridRuntimeSetting = AssetDatabase.LoadAssetAtPath<HybridRuntimeSettings>(assetPath);
-                if (hybridRuntimeSetting != null)
-                    hybridRuntimeSettings.Add(hybridRuntimeSetting);
-            }
+            var asset = AssetDatabase.LoadAssetAtPath<T>(assetPath);
+            if (asset != null)
+                results.Add(asset);
         }
-
-        return hybridRuntimeSettings;
+        return results;
     }
 
     private void EnsureRuntimeSettingsAssigned()
@@ -198,7 +172,7 @@ public class HybridBuilderWindow : EditorWindow
         _hybridBuilderSettings.RuntimeSettings = _hybridRuntimeSettings[0];
         EditorUtility.SetDirty(_hybridBuilderSettings);
     }
-    
+
     void HybridBuilderRuntimeMenuAction(DropdownMenuAction action)
     {
         var targetSetting = (HybridRuntimeSettings) action.userData;

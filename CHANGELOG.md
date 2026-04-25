@@ -5,6 +5,21 @@ All notable changes to this package are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.1.2] - 2026-04-25
+
+### Fixed
+
+- 文件名大小写：`Editor/HybridBuilderWIndow.uxml` → `HybridBuilderWindow.uxml`，避免 Linux/Mac CI 上找不到文件
+- `BuildHelper`：剩余 3 处裸 `Debug.Log` 改为 `Debug.unityLogger.Log("BuildHelper", ...)`，与全文件统一
+- `BuildHelper.GetCachedPreservableProperties`：原 `catch (Exception)` 静默吞异常改为带类型名和错误信息的 `LogWarning`，便于排查
+
+### Changed
+
+- `TaskBuildScript_SBP`：用 `AssetDatabase.StartAssetEditing/StopAssetEditing` 包裹两次 Copy，将串联场景下的两次全工程 Refresh 合并为一次；两个 Copy 方法独立调用时仍各自刷新
+- `HybridBuilderSettings`：抽取 `SetField<T>(ref T, T)` 私有方法，14 个属性 setter 改为单行委托；同时跳过相等赋值，避免无意义的 SetDirty
+- `HybridBuilderWindow`：合并 `FindAllHybridBuilderSettings` / `FindAllHybridRuntimeSettings` 为泛型 `FindAllAssets<T>`
+- `HybridScriptableBuildPipelineViewer.BuildFinish`：提取 `IncrementScriptPackage` / `IncrementAssetPackages` 两个本地方法，4 个 case 不再重复 `UpdatePackageVersion` + `Version++` 模式
+
 ## [3.1.1] - 2026-04-25
 
 ### Added

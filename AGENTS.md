@@ -1,11 +1,11 @@
-# AGENTS.md — com.yanglingyun.hyu v3.1.1
+# AGENTS.md — com.yanglingyun.hyu v3.1.2
 
 ## Project Overview
 
 This repository is a **pure Unity Package (UPM) root**, not a Unity project.
 
 - Package name: `com.yanglingyun.hyu`
-- Version: 3.1.1
+- Version: 3.1.2
 - Minimum Unity: 2022.3
 - Domain: HybridCLR + YooAsset hot-update build toolchain
 - Target platforms: Windows, Android, iOS

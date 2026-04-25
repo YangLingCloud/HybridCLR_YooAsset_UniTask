@@ -218,7 +218,7 @@ public class BuildHelper
         {
             //替换掉程序集的拓展名,以方便后续拷贝AOTDll的时候可以和HotUpdateDll共用相同的拷贝逻辑
             var patchedAOTAssemblyName = module.Name.Replace(".dll", string.Empty);
-            Debug.Log($"AOT assembly requiring supplemental metadata ========= {patchedAOTAssemblyName}");
+            Debug.unityLogger.Log("BuildHelper", $"AOT assembly requiring supplemental metadata ========= {patchedAOTAssemblyName}");
             patchedAOTAssemblies.Add(patchedAOTAssemblyName);
         }
 
@@ -243,7 +243,7 @@ public class BuildHelper
             var dllFilePath = Path.Combine(ProjectPath, originDir, $"{originFileName}.dll");
             if (!File.Exists(dllFilePath))
             {
-                Debug.Log($"{dllFilePath} not found");
+                Debug.unityLogger.Log("BuildHelper", $"{dllFilePath} not found");
                 continue;
             }
 
@@ -365,7 +365,7 @@ public class BuildHelper
             Directory.Delete(path, true);
         }
 
-        Debug.Log("Sandbox directory deleted successfully");
+        Debug.unityLogger.Log("BuildHelper", "Sandbox directory deleted successfully");
     }
 
     [MenuItem("HybridTool/Supplement Prefab Dependencies")]
@@ -576,9 +576,11 @@ public class BuildHelper
                 list.Add((propType.Assembly.GetName().Name, propType.FullName));
             }
         }
-        catch (Exception)
+        catch (Exception e)
         {
-            // 部分属性反射可能抛出异常（如索引器、泛型约束等），安全跳过
+            // 部分属性反射可能抛出异常（如索引器、泛型约束等），记录警告后跳过
+            Debug.unityLogger.LogWarning("PreservableProps",
+                $"Reflect properties failed on {type.FullName}: {e.Message}");
         }
 
         var arr = list.ToArray();
