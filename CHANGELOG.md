@@ -5,6 +5,47 @@ All notable changes to this package are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.1.0] - 2026-04-24
+
+### Breaking Changes
+
+- 为所有源码新增命名空间：`YangLing.Hybrid.Editor`（及 `.BuildPipelineTask` / `.ScriptableBuildPipeline` 子命名空间）、`YangLing.Hybrid.Runtime`。使用类型的地方需 `using` 对应命名空间。已通过 `[MovedFrom]` 保留 ScriptableObject 资产的反序列化兼容性。
+- `HybridRuntimeSettings.Packages` 由 JSON 字符串改为结构化 `List<PackageVersion>`。旧字段通过 `[FormerlySerializedAs("Packages")]` + `_packagesLegacyJson` 保留，并由 `HybridRuntimeSettingsMigrator` 在 Editor 启动时一次性迁移。
+- 拼写修复（会影响外部调用方）：
+  - `HybrdiScriptableBuildPipeline` → `HybridScriptableBuildPipeline`（文件 + 类名）
+  - `HybridBuilderWIndow.uxml` → `HybridBuilderWindow.uxml`
+  - `assetEncyptionClassName` → `assetEncryptionClassName`（旧序列化字段通过 `FormerlySerializedAs` 兼容）
+  - `CheckScriptPathExsist` → `CheckScriptPathExist`
+  - 版本显示字符串：`Realse` / `AssetPakcage` / `ScriptPackge` → `Release` / `AssetPackage` / `ScriptPackage`
+
+### Added
+
+- `Editor/HybridPaths.cs`：集中管理 AOT / 热更 DLL 目录、link.xml、清单文件名等常量。
+- `Editor/HybridRuntimeSettingsMigrator.cs`：首次加载时自动将旧版 `Packages` JSON 字段迁移到新的结构化列表。
+- `BuildApplication` 非 Android 平台的显式错误日志（替换原本的静默失败）。
+- 反射属性结果缓存（`BuildHelper.CollectPreserveType`）。
+
+### Fixed
+
+- `BuildHelper.CheckAccessMissingMetadata`：修复热更新程序集列表为空时误判为通过的逻辑；现在空列表返回 false 并发出警告，实际检查失败也会累积标记而非首次失败即跳出。
+- `HybrdiScriptableBuildPipeline.Run`：修复强转后未使用变量的问题，真正的 `HybridScriptableBuildParameters` 传入 `builder.Run`。
+- `HybridScriptableBuildPipelineViewer.BuildAsset`：移除 `CompressOption` 重复赋值。
+- `BuildHelper.SupplementPrefabDependent`：使用 try/finally 保证进度条清理；将全量 `AssetDatabase.Refresh()` 替换为针对 link.xml 的 `ImportAsset`。
+- `HybridBuilderWindow`：`FindAll*Settings` 不再抛异常，显示友好的空状态提示。
+- `HybridBuilderSettings` setters 不再静默忽略空值；错误日志使用英文 tag 并去除中文提示。
+- `BuildFinish`：写 RuntimeSettings.json 前确保目录存在；仅在实际发生变更时写入。
+- `SceneHelper`：移除死代码（`ValidatePlayModeUseFirstScene` / `UpdatePlayModeUseFirstScene`）与无意义 `playModeStateChanged += null;`；菜单文本改英文。
+
+### Changed
+
+- `ExecuteBuild` 重构为调用 `ValidateMetadata / ValidateScriptPath / ValidateAssetPackages` 三个校验方法，消除四个分支的重复代码。
+- `CheckScriptPathExist`：两个 GUID 都找到后立即 return，避免继续遍历剩余收集器。
+- `BuildHelper.ProjectPath` 改为属性，避免静态字段在域重载时陈旧。
+- 移除 `System.Drawing` 等未使用 using。
+- 移除未使用的 `GetBuiltinShaderBundleName` 方法。
+- 同步更新 `HybridBuildPipelineTests.cs` 的断言以匹配新版本字符串、类名与命名空间。
+- **测试套件精简（25 → 8）**：删除恒真断言、上游 API 测试（`SettingsUtil`/HybridCLR 字段存在性）、宿主工程配置型断言（`BuildScenes`/`HostServerIP` 等），以及死代码 `ResolveSnapshotPath`。重复的路径解析、版本字符串、空路径防御测试合并为参数化测试。最终保留 8 个高价值用例：路径解析、版本字符串构建/展示格式、空路径防御、源目录缺失、流水线类型校验、端到端 GenerateAll、端到端 CopyHotUpdateDll。`Platform_*` 参数化 SlowTest 移除（单机上仅当前平台真跑、其余 Inconclusive，价值低于成本）。
+
 ## [3.0.1] - 2026-03-07
 
 ### Added

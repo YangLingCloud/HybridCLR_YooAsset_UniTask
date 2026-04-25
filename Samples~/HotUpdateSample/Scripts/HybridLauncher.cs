@@ -9,6 +9,7 @@ using Newtonsoft.Json;
 using UnityEngine;
 using UniFramework.Event;
 using UnityEngine.Networking;
+using YangLing.Hybrid.Runtime;
 using YooAsset;
 
 public class HybridLauncher : MonoBehaviour
@@ -67,12 +68,29 @@ public class HybridLauncher : MonoBehaviour
         var go = Resources.Load<GameObject>("PatchWindow");
         GameObject.Instantiate(go);
 
-        var packages = JsonConvert.DeserializeObject<Dictionary<string, string>>(RuntimeSettings.Packages);
+        var packages = RuntimeSettings.Packages;
+        if (packages == null || packages.Count == 0)
+        {
+            // 兼容旧版资产：若已迁移为结构化列表则跳过；否则回退到旧版 JSON 字段
+            var legacyJson = RuntimeSettings.PackagesLegacyJson;
+            if (!string.IsNullOrEmpty(legacyJson))
+            {
+                var legacyDict = JsonConvert.DeserializeObject<System.Collections.Generic.Dictionary<string, string>>(legacyJson);
+                if (legacyDict != null)
+                {
+                    foreach (var kv in legacyDict)
+                    {
+                        RuntimeSettings.SetPackageVersion(kv.Key, kv.Value);
+                    }
+                    packages = RuntimeSettings.Packages;
+                }
+            }
+        }
 
         foreach (var package in packages)
         {
             // 开始补丁更新流程
-            var operation = new PatchOperation(package.Key,package.Value, PlayMode, RuntimeSettings);
+            var operation = new PatchOperation(package.Name, package.Version, PlayMode, RuntimeSettings);
             YooAssets.StartOperation(operation);
             await operation;
             if (operation.Status != EOperationStatus.Succeed)

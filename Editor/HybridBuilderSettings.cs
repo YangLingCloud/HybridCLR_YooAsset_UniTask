@@ -4,8 +4,12 @@ using System.IO;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.Serialization;
+using YangLing.Hybrid.Runtime;
 using YooAsset;
 using YooAsset.Editor;
+
+namespace YangLing.Hybrid.Editor
+{
 
 public enum HybridBuildOption
 {
@@ -37,6 +41,7 @@ public enum HybridBuildOption
 }
 
 [CreateAssetMenu(fileName = "HybridBuilderSettings", menuName = "Scriptable Objects/HybridBuilderSettings")]
+[UnityEngine.Scripting.APIUpdating.MovedFrom(true, null, null, "HybridBuilderSettings")]
 public class HybridBuilderSettings : ScriptableObject
 {
     void OnEnable()
@@ -44,7 +49,7 @@ public class HybridBuilderSettings : ScriptableObject
         if (string.IsNullOrEmpty(_buildOutputPath))
         {
             // 默认使用相对于工程根目录的路径
-            _buildOutputPath = "Bundles";
+            buildOutputPath = HybridPaths.DefaultBundleOutputDir;
         }
     }
     
@@ -65,10 +70,6 @@ public class HybridBuilderSettings : ScriptableObject
         get => scriptPackageName;
         set
         {
-            if (string.IsNullOrEmpty(value))
-            {
-                return;
-            }
             scriptPackageName = value;
             EditorUtility.SetDirty(this);
         }
@@ -84,11 +85,6 @@ public class HybridBuilderSettings : ScriptableObject
         get => _buildOutputPath;
         set
         {
-            if (string.IsNullOrEmpty(value))
-            {
-                return;
-            }
-
             _buildOutputPath = value;
             EditorUtility.SetDirty(this);
         }
@@ -141,10 +137,11 @@ public class HybridBuilderSettings : ScriptableObject
     {
         get
         {
-            if (!_patchedAOTDLLFolder){
-                Debug.unityLogger.LogError("路径为空！",
-                    $"PatchedAOTDLLFolder ===> {_patchedAOTDLLFolder} ");
-                return String.Empty;
+            if (!_patchedAOTDLLFolder)
+            {
+                Debug.unityLogger.LogError("HybridBuilderSettings",
+                    "PatchedAOTDLLFolder is not assigned");
+                return string.Empty;
             }
             var patchedAOTDLLPath = AssetDatabase.GetAssetPath(_patchedAOTDLLFolder);
             return patchedAOTDLLPath;
@@ -172,10 +169,11 @@ public class HybridBuilderSettings : ScriptableObject
     {
         get
         {
-            if (!_hotUpdateDLLFolder){
-                Debug.unityLogger.LogError("路径为空！",
-                    $"HotUpdateDLLFolder ===> {_hotUpdateDLLFolder} ");
-                return String.Empty;
+            if (!_hotUpdateDLLFolder)
+            {
+                Debug.unityLogger.LogError("HybridBuilderSettings",
+                    "HotUpdateDLLFolder is not assigned");
+                return string.Empty;
             }
             var hotUpdateDLLPath = AssetDatabase.GetAssetPath(_hotUpdateDLLFolder);
             return hotUpdateDLLPath;
@@ -277,22 +275,18 @@ public class HybridBuilderSettings : ScriptableObject
     /// <summary>
     /// AB包加密方式
     /// </summary>
-    public string assetEncyptionClassName
+    public string assetEncryptionClassName
     {
-        get => _assetEncyptionClassName;
+        get => _assetEncryptionClassName;
         set
         {
-            if (string.IsNullOrEmpty(value))
-            {
-                return;
-            }
-
-            _assetEncyptionClassName = value;
+            _assetEncryptionClassName = value;
             EditorUtility.SetDirty(this);
         }
     }
 
-    [SerializeField] private string _assetEncyptionClassName;
+    [FormerlySerializedAs("_assetEncyptionClassName")]
+    [SerializeField] private string _assetEncryptionClassName;
 
 
     /// <summary>
@@ -349,11 +343,6 @@ public class HybridBuilderSettings : ScriptableObject
         get => _assetBuildinFileCopyParams;
         set
         {
-            if (string.IsNullOrEmpty(value))
-            {
-                return;
-            }
-
             _assetBuildinFileCopyParams = value;
             EditorUtility.SetDirty(this);
         }
@@ -389,10 +378,11 @@ public class HybridBuilderSettings : ScriptableObject
         else
         {
             buildVersion =
-                $"Realse:{_releaseBuildVersion} AssetPakcage:{_assetBuildVersion} ScriptPackge:{_scriptBuildVersion}";
+                $"Release:{_releaseBuildVersion} AssetPackage:{_assetBuildVersion} ScriptPackage:{_scriptBuildVersion}";
         }
 
         return buildVersion;
     }
     
+}
 }

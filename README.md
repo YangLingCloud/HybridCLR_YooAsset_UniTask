@@ -358,7 +358,7 @@ HybridCLR + YooAsset + UniTask 的构建流程分为两个主要阶段：**主�
 │   ├── HybridEditor.asmdef     # 编辑器 asmdef
 │   ├── BuildHelper.cs          # AOT 元数据检查、DLL 拷贝、APK 构建、link.xml 补全
 │   ├── HybridBuilderWindow.cs  # UI Toolkit 打包窗口主控制器
-│   ├── HybridBuilderWIndow.uxml # 窗口 UI 布局（注意大小写：WIndow）
+│   ├── HybridBuilderWindow.uxml # 窗口 UI 布局
 │   ├── HybridBuilderSettings.cs # 构建配置 ScriptableObject + HybridBuildOption 枚举
 │   ├── HybridBuildPipeViewerBase.cs  # 构建管线查看器基类
 │   ├── HybridBuildPipeViewerBase.uxml # 查看器 UI 布局
@@ -367,7 +367,7 @@ HybridCLR + YooAsset + UniTask 的构建流程分为两个主要阶段：**主�
 │   ├── BuildPipelineTask/      # 重写的打包流水线 Task
 │   │   └── TaskBuildScript_SBP.cs  # SBP 自定义构建任务（脚本打包）
 │   └── ScriptableBuildPipeline/ # 重写的打包流水线
-│       ├── HybrdiScriptableBuildPipeline.cs     # SBP 管线实现（注意拼写：Hybrdi）
+│       ├── HybridScriptableBuildPipeline.cs     # SBP 管线实现
 │       └── HybridScriptableBuildParameters.cs   # SBP 构建参数
 │
 ├── Runtime/                    # 运行时程序集：com.yanglingyun.hyu.Runtime
@@ -507,7 +507,7 @@ HybridLauncher → GameManager → PatchOperation（8 步状态机）
 | **Platform Tests** | 平台参数化测试（Windows / Android / iOS）：DLL 输出路径、AOT 裁剪路径、跨平台路径唯一性 |
 | **FirstBuildPrerequisites** | 首次构建前置验证：AOT 裁剪目录、`GenerateAll` 完整性、`MetadataCheck` 通过性 |
 | **VersionLogic** | 版本自增正确性、`GetCurrentVersion` 构建/展示双格式、版本递增后输出路径同步变化 |
-| **PipelineTypeValidation** | `HybrdiScriptableBuildPipeline` 传入非法参数类型时抛出异常 |
+| **PipelineTypeValidation** | `HybridScriptableBuildPipeline` 传入非法参数类型时抛出异常 |
 | **CopyDllEdgeCases** | `CopyPatchedAOTDll` / `CopyHotUpdateDll` 空路径防御、`CopyDllFileToByte` 源目录不存在时返回空列表 |
 
 > 标记 `[Category("SlowTest")]` 的测试会实际执行构建命令，耗时较长；当活跃平台不匹配时会自动跳过。

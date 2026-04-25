@@ -7,6 +7,7 @@ using UnityEditor;
 using UnityEditor.UIElements;
 using UnityEngine;
 using UnityEngine.UIElements;
+using YangLing.Hybrid.Editor;
 
 namespace YooAsset.Editor
 {
@@ -33,7 +34,7 @@ namespace YooAsset.Editor
         private Toggle _useAssetDependencyDBToggle;
 
 
-        Foldout pakcagesFoldout;
+        Foldout packagesFoldout;
 
         private HybridBuilderSettings _hybridBuilderSettings;
 
@@ -47,7 +48,7 @@ namespace YooAsset.Editor
 
             if (CreateView(parent))
             {
-                RefreshScriptCollectorGourpNameView();
+                RefreshScriptCollectorGroupNameView();
                 RefreshBuildinFileCopyOptionView();
             }
         }
@@ -102,24 +103,24 @@ namespace YooAsset.Editor
             _buildVersionField.SetEnabled(false);
 
             var packageErrorLabel = Root.Q("PackageErrorLabel");
-            // 检测构建包裹
+            // 检测构建包�?
             var packageNames = GetBuildPackageNames();
 
-            var hasTwoAndMorePakcage = packageNames.Count > 1;
-            packageErrorLabel.visible = !hasTwoAndMorePakcage;
+            var hasTwoAndMorePackages = packageNames.Count > 1;
+            packageErrorLabel.visible = !hasTwoAndMorePackages;
             // 构建包裹
-            if (!hasTwoAndMorePakcage)
+            if (!hasTwoAndMorePackages)
             {
                 return false;
             }
 
 
-            #region 构建资源包
+            #region 构建资源�?
 
             var assetBundlePackageContainer = Root.Q("AssetBundlePackageContainer");
 
-            int assetPakcageIndex = 0;
-            var scriptPackageOption = new PopupField<string>(packageNames, assetPakcageIndex);
+            int assetPackageIndex = 0;
+            var scriptPackageOption = new PopupField<string>(packageNames, assetPackageIndex);
             scriptPackageOption.label = "Script Package";
             scriptPackageOption.style.width = StyleWidth;
 
@@ -139,10 +140,10 @@ namespace YooAsset.Editor
 
             assetBundlePackageContainer.Add(scriptPackageOption);
 
-            pakcagesFoldout = new Foldout();
-            pakcagesFoldout.text = "Select Build Asset Packages";
-            pakcagesFoldout.style.width = StyleWidth;
-            assetBundlePackageContainer.Add(pakcagesFoldout);
+            packagesFoldout = new Foldout();
+            packagesFoldout.text = "Select Build Asset Packages";
+            packagesFoldout.style.width = StyleWidth;
+            assetBundlePackageContainer.Add(packagesFoldout);
             RefreshAssetPackages(packageNames);
 
             #endregion
@@ -154,8 +155,8 @@ namespace YooAsset.Editor
                 var encryptionClassTypes = EditorTools.GetAssignableTypes(typeof(IEncryptionServices));
                 if (encryptionClassTypes.Count > 0)
                 {
-                    var encyptionClassName = _hybridBuilderSettings.assetEncyptionClassName;
-                    int defaultIndex = encryptionClassTypes.FindIndex(x => x.FullName.Equals(encyptionClassName));
+                    var encryptionClassName = _hybridBuilderSettings.assetEncryptionClassName;
+                    int defaultIndex = encryptionClassTypes.FindIndex(x => x.FullName.Equals(encryptionClassName));
                     if (defaultIndex < 0)
                         defaultIndex = 0;
                     _encryptionField = new PopupField<Type>(encryptionClassTypes, defaultIndex);
@@ -163,7 +164,7 @@ namespace YooAsset.Editor
                     _encryptionField.style.width = StyleWidth;
                     _encryptionField.RegisterValueChangedCallback(evt =>
                     {
-                        _hybridBuilderSettings.assetEncyptionClassName = _encryptionField.value.FullName;
+                        _hybridBuilderSettings.assetEncryptionClassName = _encryptionField.value.FullName;
                     });
                     encryptionContainer.Add(_encryptionField);
                 }
@@ -265,7 +266,7 @@ namespace YooAsset.Editor
                 _hybridBuilderSettings.isClearBuildCache = evt.newValue;
             });
 
-            // 使用资源依赖数据库
+            // 使用资源依赖数据�?
             bool useAssetDependencyDB = _hybridBuilderSettings.isUseAssetDependDB;
             _useAssetDependencyDBToggle = Root.Q<Toggle>("UseAssetDependency");
             _useAssetDependencyDBToggle.SetValueWithoutNotify(useAssetDependencyDB);
@@ -282,7 +283,7 @@ namespace YooAsset.Editor
             hybridBuildOption.RegisterValueChangedCallback(evt =>
             {
                 _hybridBuilderSettings.hybridBuildOption = (HybridBuildOption) evt.newValue;
-                RefreshScriptCollectorGourpNameView();
+                RefreshScriptCollectorGroupNameView();
             });
 
             // 对齐文本间距
@@ -298,7 +299,7 @@ namespace YooAsset.Editor
             UIElementsTools.SetElementLabelMinWidth(hybridBuildOption, LabelMinWidth);
             UIElementsTools.SetElementLabelMinWidth(scriptPackageOption, LabelMinWidth);
             
-            UIElementsTools.SetElementLabelMinWidth(pakcagesFoldout, LabelMinWidth);
+            UIElementsTools.SetElementLabelMinWidth(packagesFoldout, LabelMinWidth);
             UIElementsTools.SetElementLabelMinWidth(_patchedAOTDLLFolderField, LabelMinWidth);
             UIElementsTools.SetElementLabelMinWidth(_hotUpdateDLLFolderField, LabelMinWidth);
 
@@ -311,7 +312,7 @@ namespace YooAsset.Editor
 
         private void RefreshAssetPackages(List<string> packageNames)
         {
-            pakcagesFoldout.Clear();
+            packagesFoldout.Clear();
             var selectablePackages = new List<string>(packageNames);
             selectablePackages.Remove(_hybridBuilderSettings.ScriptPackageName);
             foreach (var package in selectablePackages)
@@ -334,7 +335,7 @@ namespace YooAsset.Editor
                     packageToggle.SetValueWithoutNotify(true);
                 }
 
-                pakcagesFoldout.Add(packageToggle);
+                packagesFoldout.Add(packageToggle);
             }
         }
 
@@ -359,7 +360,7 @@ namespace YooAsset.Editor
             _copyBuildinFileTagsField.visible = tagsFiledVisible;
         }
 
-        private void RefreshScriptCollectorGourpNameView()
+        private void RefreshScriptCollectorGroupNameView()
         {
             var buildOption = _hybridBuilderSettings.hybridBuildOption;
             bool nameFiledVisible = buildOption == HybridBuildOption.BuildAll ||
@@ -397,13 +398,13 @@ namespace YooAsset.Editor
         }
 
         /// <summary>
-        /// 创建加密类实例
+        /// 创建加密类实�?
         /// </summary>
         protected IEncryptionServices CreateEncryptionInstance()
         {
-            var encyptionClassName = _hybridBuilderSettings.assetEncyptionClassName;
+            var encryptionClassName = _hybridBuilderSettings.assetEncryptionClassName;
             var encryptionClassTypes = EditorTools.GetAssignableTypes(typeof(IEncryptionServices));
-            var classType = encryptionClassTypes.Find(x => x.FullName.Equals(encyptionClassName));
+            var classType = encryptionClassTypes.Find(x => x.FullName.Equals(encryptionClassName));
             if (classType != null)
                 return (IEncryptionServices) Activator.CreateInstance(classType);
             else
@@ -412,8 +413,9 @@ namespace YooAsset.Editor
 
         private string GetDefaultPackageVersion()
         {
-            int totalMinutes = DateTime.Now.Hour * 60 + DateTime.Now.Minute;
-            return DateTime.Now.ToString("yyyy-MM-dd") + "-" + totalMinutes;
+            var now = DateTime.Now;
+            int totalMinutes = now.Hour * 60 + now.Minute;
+            return now.ToString("yyyy-MM-dd") + "-" + totalMinutes;
         }
 
 

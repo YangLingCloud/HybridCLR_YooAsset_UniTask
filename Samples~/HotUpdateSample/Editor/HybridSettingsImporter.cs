@@ -6,6 +6,8 @@ using HybridCLR.Editor.Settings;
 using UnityEditor;
 using UnityEditorInternal;
 using UnityEngine;
+using YangLing.Hybrid.Editor;
+using YangLing.Hybrid.Runtime;
 
 namespace YooAsset.Editor
 {
@@ -342,6 +344,7 @@ namespace YooAsset.Editor
             if (added > 0)
             {
                 settings.hotUpdateAssemblyDefinitions = result.ToArray();
+                EditorUtility.SetDirty(settings);
             }
 
             return added > 0 ? 1 : 0;
@@ -485,9 +488,9 @@ namespace YooAsset.Editor
             // 回退：开发环境下写入仓库内的 Samples~ 目录
             var packagePath = Path.GetFullPath("Samples~/HotUpdateSample/Editor");
             if (Directory.Exists(packagePath))
-                return Path.Combine(packagePath, SnapshotFileName);
+                return Path.Combine(packagePath, SnapshotFileName).Replace("\\", "/");
             // 最终回退
-            return Path.Combine("Samples~", "HotUpdateSample", "Editor", SnapshotFileName);
+            return Path.Combine("Samples~", "HotUpdateSample", "Editor", SnapshotFileName).Replace("\\", "/");
         }
 
         /// <summary>

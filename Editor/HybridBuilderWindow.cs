@@ -1,17 +1,19 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Drawing;
 using UnityEditor;
 using UnityEditor.UIElements;
 using UnityEngine;
 using UnityEngine.UIElements;
+using YangLing.Hybrid.Runtime;
 using YooAsset.Editor;
 
+namespace YangLing.Hybrid.Editor
+{
 
 public class HybridBuilderWindow : EditorWindow
 {
     private HybridBuilderSettings _hybridBuilderSettings;
+    private List<HybridRuntimeSettings> _hybridRuntimeSettings = new List<HybridRuntimeSettings>();
 
     private Toolbar _toolbar;
     private ToolbarMenu _packageMenu;
@@ -66,8 +68,8 @@ public class HybridBuilderWindow : EditorWindow
 
                 _toolbar.Add(_hybridBuilderSettingMenu);
             }
-            var hybridRuntimeSettings = FindAllHybridRuntimeSettings();
-            if (hybridRuntimeSettings.Count == 0)
+            _hybridRuntimeSettings = FindAllHybridRuntimeSettings();
+            if (_hybridRuntimeSettings.Count == 0)
             {
                 var label = new Label();
                 label.text = "Not found any hybridRuntimeSetting";
@@ -75,11 +77,11 @@ public class HybridBuilderWindow : EditorWindow
                 _toolbar.Add(label);
                 return;
             }
-            
-            _hybridBuilderSettings.RuntimeSettings = hybridRuntimeSettings[0];
+
+            EnsureRuntimeSettingsAssigned();
             _hybridRuntimeSettingMenu = new ToolbarMenu();
             _hybridRuntimeSettingMenu.style.width = 200;
-            foreach (var runtimeSettings in hybridRuntimeSettings)
+            foreach (var runtimeSettings in _hybridRuntimeSettings)
             {
                 _hybridRuntimeSettingMenu.menu.AppendAction(runtimeSettings.name,
                     HybridBuilderRuntimeMenuAction, HybridRuntimeSettingMenuFun, runtimeSettings);
@@ -102,7 +104,9 @@ public class HybridBuilderWindow : EditorWindow
         _container.Clear();
         
         _hybridBuilderSettingMenu.text = _hybridBuilderSettings.name;
-        _hybridRuntimeSettingMenu.text = _hybridBuilderSettings.RuntimeSettings.name;
+        _hybridRuntimeSettingMenu.text = _hybridBuilderSettings.RuntimeSettings != null
+            ? _hybridBuilderSettings.RuntimeSettings.name
+            : "Runtime Settings Missing";
         var buildTarget = EditorUserBuildSettings.activeBuildTarget;
 
         var viewer =
@@ -119,9 +123,6 @@ public class HybridBuilderWindow : EditorWindow
     {
         var hybridBuilderSettings = new List<HybridBuilderSettings>();
         string[] guids = AssetDatabase.FindAssets($"t:{nameof(HybridBuilderSettings)}");
-        if (guids.Length == 0)
-            throw new System.Exception($"Not found any assets : {nameof(HybridBuilderSettings)}");
-
         foreach (string assetGUID in guids)
         {
             string assetPath = AssetDatabase.GUIDToAssetPath(assetGUID);
@@ -129,12 +130,8 @@ public class HybridBuilderWindow : EditorWindow
             if (assetType == typeof(HybridBuilderSettings))
             {
                 var hybridBuilderSetting = AssetDatabase.LoadAssetAtPath<HybridBuilderSettings>(assetPath);
-                if (hybridBuilderSetting == null)
-                {
-                    throw new System.Exception($"LoadError : {assetPath}");
-                }
-
-                hybridBuilderSettings.Add(hybridBuilderSetting);
+                if (hybridBuilderSetting != null)
+                    hybridBuilderSettings.Add(hybridBuilderSetting);
             }
         }
 
@@ -142,17 +139,12 @@ public class HybridBuilderWindow : EditorWindow
     }
     
     /// <summary>
-    /// 查找工程下所有HybridBuilderSetting类型文件
+    /// 查找工程下所有HybridRuntimeSettings类型文件
     /// </summary>
-    /// <returns></returns>
-    /// <exception cref="Exception"></exception>
     List<HybridRuntimeSettings> FindAllHybridRuntimeSettings()
     {
         var hybridRuntimeSettings = new List<HybridRuntimeSettings>();
         string[] guids = AssetDatabase.FindAssets($"t:{nameof(HybridRuntimeSettings)}");
-        if (guids.Length == 0)
-            throw new System.Exception($"Not found any assets : {nameof(HybridRuntimeSettings)}");
-
         foreach (string assetGUID in guids)
         {
             string assetPath = AssetDatabase.GUIDToAssetPath(assetGUID);
@@ -160,16 +152,22 @@ public class HybridBuilderWindow : EditorWindow
             if (assetType == typeof(HybridRuntimeSettings))
             {
                 var hybridRuntimeSetting = AssetDatabase.LoadAssetAtPath<HybridRuntimeSettings>(assetPath);
-                if (hybridRuntimeSetting == null)
-                {
-                    throw new System.Exception($"LoadError : {assetPath}");
-                }
-
-                hybridRuntimeSettings.Add(hybridRuntimeSetting);
+                if (hybridRuntimeSetting != null)
+                    hybridRuntimeSettings.Add(hybridRuntimeSetting);
             }
         }
 
         return hybridRuntimeSettings;
+    }
+
+    private void EnsureRuntimeSettingsAssigned()
+    {
+        if (_hybridBuilderSettings.RuntimeSettings != null || _hybridRuntimeSettings.Count == 0)
+            return;
+
+        // 仅在未配置时自动补齐，避免打开窗口时覆盖用户选择。
+        _hybridBuilderSettings.RuntimeSettings = _hybridRuntimeSettings[0];
+        EditorUtility.SetDirty(_hybridBuilderSettings);
     }
     
     void HybridBuilderRuntimeMenuAction(DropdownMenuAction action)
@@ -178,6 +176,7 @@ public class HybridBuilderWindow : EditorWindow
         if (_hybridBuilderSettings.RuntimeSettings != targetSetting)
         {
             _hybridBuilderSettings.RuntimeSettings = targetSetting;
+            EditorUtility.SetDirty(_hybridBuilderSettings);
             RefreshBuildPipelineView();
         }
     }
@@ -197,6 +196,7 @@ public class HybridBuilderWindow : EditorWindow
         if (_hybridBuilderSettings != targetSetting)
         {
             _hybridBuilderSettings = targetSetting;
+            EnsureRuntimeSettingsAssigned();
             RefreshBuildPipelineView();
         }
     }
@@ -211,4 +211,5 @@ public class HybridBuilderWindow : EditorWindow
     }
 
     
+}
 }

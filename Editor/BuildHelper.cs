@@ -13,13 +13,15 @@ using HybridCLR.Editor.Meta;
 using Newtonsoft.Json;
 using UnityEditor.Build.Reporting;
 
+namespace YangLing.Hybrid.Editor
+{
 
 public class BuildHelper
 {
     /// <summary>
     /// 工程目录路径，Assets上一层
     /// </summary>
-    public static string ProjectPath = Directory.GetParent(Application.dataPath).FullName;
+    public static string ProjectPath => HybridPaths.GetProjectRoot();
 
     // Start is called before the first frame update
     public static string[] GetBuildScenes()
@@ -96,24 +98,31 @@ public class BuildHelper
         var checker = new MissingMetadataChecker(aotDir, SettingsUtil.HotUpdateAssemblyNamesIncludePreserved);
 
         string hotUpdateDir = SettingsUtil.GetHotUpdateDllsOutputDirByTarget(target);
-        bool notAnyMissing = false;
-        foreach (var dll in SettingsUtil.HotUpdateAssemblyFilesExcludePreserved)
+        var hotUpdateDlls = SettingsUtil.HotUpdateAssemblyFilesExcludePreserved;
+        if (hotUpdateDlls == null || hotUpdateDlls.Count == 0)
         {
-            string dllPath = $"{hotUpdateDir}/{dll}";
-            notAnyMissing = checker.Check(dllPath);
-            if (!notAnyMissing)
+            Debug.unityLogger.LogWarning("MetadataCheck",
+                "Hot-update assembly list is empty. Configure HybridCLR Settings first");
+            return false;
+        }
+
+        bool allPassed = true;
+        foreach (var dll in hotUpdateDlls)
+        {
+            string dllPath = Path.Combine(hotUpdateDir, dll);
+            if (!checker.Check(dllPath))
             {
                 Debug.unityLogger.LogError("MetadataCheck", $"Metadata check failed for {dll}");
-                return false;
+                allPassed = false;
             }
         }
 
-        return true;
+        return allPassed;
     }
     [MenuItem("HybridTool/Build APK")]
     public static void Debug_BuildAPK()
     {
-        var sampleOutputPath = Path.Combine(ProjectPath, "Bundles");
+        var sampleOutputPath = Path.Combine(ProjectPath, HybridPaths.DefaultBundleOutputDir);
         BuildAPK(sampleOutputPath, "9999");
     }
 
@@ -138,19 +147,10 @@ public class BuildHelper
         var buildPath = string.Empty;
 
         buildPlayerOptions.target = BuildTarget.Android;
-        if (isExportProject)
-        {
-            buildPath = Path.Combine(outputPath,
-                $"{PlayerSettings.productName}_{version}_{DateTime.Now.ToString("yyyy_M_d_HH_mm_s")}");
-
-            buildPlayerOptions.options = BuildOptions.None;
-        }
-        else
-        {
-            buildPath = Path.Combine(outputPath,
-                $"{PlayerSettings.productName}_{version}_{DateTime.Now.ToString("yyyy_M_d_HH_mm_s")}.apk");
-            buildPlayerOptions.options = BuildOptions.None;
-        }
+        var buildSuffix = isExportProject ? string.Empty : ".apk";
+        buildPath = Path.Combine(outputPath,
+            $"{PlayerSettings.productName}_{version}_{DateTime.Now:yyyy_M_d_HH_mm_s}{buildSuffix}");
+        buildPlayerOptions.options = BuildOptions.None;
 
         Debug.unityLogger.Log(buildPath);
         buildPlayerOptions.locationPathName = buildPath;
@@ -200,23 +200,31 @@ public class BuildHelper
 
         analyzer.Run();
 
-        var types = analyzer.AotGenericTypes.ToList();
-        var methods = analyzer.AotGenericMethods.ToList();
+        var moduleSet = new HashSet<dnlib.DotNet.ModuleDef>();
+        foreach (var type in analyzer.AotGenericTypes)
+        {
+            moduleSet.Add(type.Type.Module);
+        }
+        foreach (var method in analyzer.AotGenericMethods)
+        {
+            moduleSet.Add(method.Method.Module);
+        }
 
-        List<dnlib.DotNet.ModuleDef> modules = new HashSet<dnlib.DotNet.ModuleDef>(
-            types.Select(t => t.Type.Module).Concat(methods.Select(m => m.Method.Module))).ToList();
+        List<dnlib.DotNet.ModuleDef> modules = moduleSet.ToList();
         modules.Sort((a, b) => a.Name.CompareTo(b.Name));
 
-        List<string> patchtedAOTAssemblys = new List<string>();
+        List<string> patchedAOTAssemblies = new List<string>();
         foreach (dnlib.DotNet.ModuleDef module in modules)
         {
             //替换掉程序集的拓展名,以方便后续拷贝AOTDll的时候可以和HotUpdateDll共用相同的拷贝逻辑
-            var patchtedAOTAssemblysName = module.Name.Replace(".dll", string.Empty);
-            Debug.Log($"AOT assembly requiring supplemental metadata ========= {patchtedAOTAssemblysName}");
-            patchtedAOTAssemblys.Add(patchtedAOTAssemblysName);
+            var patchedAOTAssemblyName = module.Name.Replace(".dll", string.Empty);
+            Debug.Log($"AOT assembly requiring supplemental metadata ========= {patchedAOTAssemblyName}");
+            patchedAOTAssemblies.Add(patchedAOTAssemblyName);
         }
 
-        gs.patchAOTAssemblies = patchtedAOTAssemblys.ToArray();
+        gs.patchAOTAssemblies = patchedAOTAssemblies.ToArray();
+        EditorUtility.SetDirty(gs);
+        AssetDatabase.SaveAssets();
     }
 
     [MenuItem("HybridTool/Get Patched AOT Assembly List")]
@@ -276,7 +284,7 @@ public class BuildHelper
         if (dllRawFileAssetNames != null && dllRawFileAssetNames.Count > 0)
         {
             var namesJson = JsonConvert.SerializeObject(dllRawFileAssetNames);
-            File.WriteAllText($"{rawFileCollectPath}/AOTDLLs.txt", namesJson);
+            File.WriteAllText(Path.Combine(rawFileCollectPath, HybridPaths.AotDllManifest), namesJson);
             AssetDatabase.Refresh();
             Debug.unityLogger.Log("CopyPatchedAOTDllToCollectPath Success!");
         }
@@ -294,7 +302,8 @@ public class BuildHelper
         LinkGeneratorCommand.GenerateLinkXml();
         StripAOTDllCommand.GenerateStripedAOTDlls();
 
-        var aotDllRawFileCollectPath = Path.Combine(Application.dataPath, "HotUpdateAssets", "PatchedAOTDLL");
+        var aotDllRawFileCollectPath = Path.Combine(Application.dataPath,
+            "HotUpdateAssets", HybridPaths.PatchedAOTDllFolder);
 
         Debug.unityLogger.Log(aotDllRawFileCollectPath);
         CopyPatchedAOTDllToCollectPath(aotDllRawFileCollectPath);
@@ -305,7 +314,8 @@ public class BuildHelper
     {
         CompileDllCommand.CompileDllActiveBuildTarget();
 
-        var hotUpdateDllRawFileCollectPath = Path.Combine(Application.dataPath, "HotUpdateAssets", "HotUpdateDLL");
+        var hotUpdateDllRawFileCollectPath = Path.Combine(Application.dataPath,
+            "HotUpdateAssets", HybridPaths.HotUpdateDllFolder);
 
         Debug.unityLogger.Log(hotUpdateDllRawFileCollectPath);
         CopyHotUpdateDllToCollectPath(hotUpdateDllRawFileCollectPath);
@@ -320,7 +330,7 @@ public class BuildHelper
     {
         if (string.IsNullOrEmpty(rawFileCollectPath))
         {
-            Debug.unityLogger.LogError("CopyHotUpdateDllToCollectPath", $"{nameof(rawFileCollectPath)}===>Null");
+            Debug.unityLogger.LogError("CopyHotUpdateDllToCollectPath", $"{rawFileCollectPath}===>Null");
             return;
         }
 
@@ -335,7 +345,7 @@ public class BuildHelper
         if (dllRawFileAssetNames != null && dllRawFileAssetNames.Count > 0)
         {
             var json = JsonConvert.SerializeObject(dllRawFileAssetNames);
-            File.WriteAllText(Path.Combine(rawFileCollectPath, "HotUpdateDLLs.txt"), json);
+            File.WriteAllText(Path.Combine(rawFileCollectPath, HybridPaths.HotUpdateDllManifest), json);
             AssetDatabase.Refresh();
             Debug.unityLogger.Log("CopyHotUpdateDllToCollectPath  Success");
         }
@@ -368,11 +378,30 @@ public class BuildHelper
 
     public static void SupplementPrefabDependent()
     {
-        string[] dirs = {"Assets/HotUpdateAssets"};
+        try
+        {
+            SupplementPrefabDependentInternal();
+        }
+        finally
+        {
+            EditorUtility.ClearProgressBar();
+        }
+    }
+
+    private static void SupplementPrefabDependentInternal()
+    {
+        string[] dirs = ResolveHotUpdateAssetsSearchFolders();
+        if (dirs.Length == 0)
+        {
+            Debug.unityLogger.Log("[SupplementPrefabDependent] No HotUpdateAssets folders found, skipping");
+            return;
+        }
+
         var assetGuids = AssetDatabase.FindAssets("t:Prefab", dirs);
         if (assetGuids.Length == 0)
         {
-            Debug.unityLogger.Log("[SupplementPrefabDependent] No prefabs found in HotUpdateAssets, skipping");
+            Debug.unityLogger.Log(
+                $"[SupplementPrefabDependent] No prefabs found in HotUpdateAssets folders: {string.Join(", ", dirs)}");
             return;
         }
         // 第一阶段：扫描预制体，收集需要保留的类型（按程序集分组）
@@ -400,8 +429,9 @@ public class BuildHelper
         }
         // 第二阶段：加载或创建 link.xml
         EditorUtility.DisplayProgressBar("Processing", "Loading link.xml...", 0);
-        string generatedLinkPath = Path.Combine(Application.dataPath, "HybridCLRData", "Generated", "link.xml");
-        string outputLinkPath = Path.Combine(Application.dataPath, "link.xml");
+        string generatedLinkPath = Path.Combine(Application.dataPath,
+            "HybridCLRData", "Generated", "link.xml");
+        string outputLinkPath = Path.Combine(Application.dataPath, HybridPaths.AssetsLinkXmlRelative);
         XmlDocument xml = LoadOrCreateLinkXml(generatedLinkPath);
         XmlNode linker = xml.DocumentElement;
         if (linker == null)
@@ -470,8 +500,31 @@ public class BuildHelper
             }
         }
         xml.Save(outputLinkPath);
-        AssetDatabase.Refresh();
+        // 仅刷新目标文件，避免全量 Refresh 导致的大范围重导入
+        var relativeLinkPath = "Assets/link.xml";
+        AssetDatabase.ImportAsset(relativeLinkPath, ImportAssetOptions.ForceUpdate);
         Debug.unityLogger.Log($"[SupplementPrefabDependent] Done. Added {addedCount} type entries to link.xml");
+    }
+
+    private static string[] ResolveHotUpdateAssetsSearchFolders()
+    {
+        var dirs = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        if (AssetDatabase.IsValidFolder(HybridPaths.HotUpdateAssetsDir))
+            dirs.Add(HybridPaths.HotUpdateAssetsDir);
+
+        // Sample 导入后通常位于 Assets/Samples/.../Hot Update Sample/HotUpdateAssets。
+        foreach (var guid in AssetDatabase.FindAssets("HotUpdateAssets t:Folder"))
+        {
+            var path = AssetDatabase.GUIDToAssetPath(guid);
+            if (!AssetDatabase.IsValidFolder(path))
+                continue;
+
+            var folderName = Path.GetFileName(path.TrimEnd('/', '\\'));
+            if (string.Equals(folderName, "HotUpdateAssets", StringComparison.OrdinalIgnoreCase))
+                dirs.Add(path);
+        }
+
+        return dirs.OrderBy(path => path).ToArray();
     }
 
     /// <summary>
@@ -488,7 +541,25 @@ public class BuildHelper
         if (!result.ContainsKey(assemblyName))
             result[assemblyName] = new HashSet<string>();
         result[assemblyName].Add(type.FullName);
-        // 扫描公开属性中引用的 UnityEngine/TMPro 类型
+        // 扫描公开属性中引用的 UnityEngine/TMPro 类型（按 Type 缓存结果，避免每次反射）
+        foreach (var propInfo in GetCachedPreservableProperties(type))
+        {
+            if (!result.ContainsKey(propInfo.assembly))
+                result[propInfo.assembly] = new HashSet<string>();
+            result[propInfo.assembly].Add(propInfo.fullName);
+        }
+    }
+
+    /// <summary>Type → 其公开属性中需要保留的 (assembly, fullName) 列表缓存</summary>
+    private static readonly Dictionary<Type, (string assembly, string fullName)[]> _preservablePropertyCache
+        = new Dictionary<Type, (string assembly, string fullName)[]>();
+
+    private static (string assembly, string fullName)[] GetCachedPreservableProperties(Type type)
+    {
+        if (_preservablePropertyCache.TryGetValue(type, out var cached))
+            return cached;
+
+        var list = new List<(string, string)>();
         try
         {
             foreach (var prop in type.GetProperties())
@@ -496,23 +567,23 @@ public class BuildHelper
                 var propType = prop.PropertyType;
                 if (propType == null || string.IsNullOrEmpty(propType.FullName))
                     continue;
-                // 数组类型取元素类型
                 if (propType.IsArray && propType.GetElementType() != null)
                     propType = propType.GetElementType();
                 if (propType.FullName == null)
                     continue;
                 if (!propType.FullName.StartsWith("UnityEngine") && !propType.FullName.StartsWith("TMPro"))
                     continue;
-                var propAssemblyName = propType.Assembly.GetName().Name;
-                if (!result.ContainsKey(propAssemblyName))
-                    result[propAssemblyName] = new HashSet<string>();
-                result[propAssemblyName].Add(propType.FullName);
+                list.Add((propType.Assembly.GetName().Name, propType.FullName));
             }
         }
         catch (Exception)
         {
             // 部分属性反射可能抛出异常（如索引器、泛型约束等），安全跳过
         }
+
+        var arr = list.ToArray();
+        _preservablePropertyCache[type] = arr;
+        return arr;
     }
 
     /// <summary>
@@ -565,4 +636,5 @@ public class BuildHelper
         return newXml;
     }
     
+}
 }

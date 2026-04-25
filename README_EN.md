@@ -358,7 +358,7 @@ Based on how bridge functions work, for a fixed AOT portion, the bridge function
 │   ├── HybridEditor.asmdef     # Editor-only asmdef
 │   ├── BuildHelper.cs          # AOT metadata check, DLL copy, APK build, link.xml supplement
 │   ├── HybridBuilderWindow.cs  # UI Toolkit build window controller
-│   ├── HybridBuilderWIndow.uxml # Window UI layout (note casing: WIndow)
+│   ├── HybridBuilderWindow.uxml # Window UI layout
 │   ├── HybridBuilderSettings.cs # Build config ScriptableObject + HybridBuildOption enum
 │   ├── HybridBuildPipeViewerBase.cs  # Build pipeline viewer base class
 │   ├── HybridBuildPipeViewerBase.uxml # Viewer UI layout
@@ -367,7 +367,7 @@ Based on how bridge functions work, for a fixed AOT portion, the bridge function
 │   ├── BuildPipelineTask/      # Rewritten build pipeline tasks
 │   │   └── TaskBuildScript_SBP.cs  # SBP custom build task (script packaging)
 │   └── ScriptableBuildPipeline/ # Rewritten build pipeline
-│       ├── HybrdiScriptableBuildPipeline.cs     # SBP pipeline impl (note typo: Hybrdi)
+│       ├── HybridScriptableBuildPipeline.cs     # SBP pipeline impl
 │       └── HybridScriptableBuildParameters.cs   # SBP build parameters
 │
 ├── Runtime/                    # Runtime assembly: com.yanglingyun.hyu.Runtime
@@ -507,7 +507,7 @@ An NUnit EditMode test suite for validating build configuration and pipeline cor
 | **Platform Tests** | Platform-parameterized tests (Windows / Android / iOS): DLL output paths, AOT stripping paths, cross-platform path uniqueness |
 | **FirstBuildPrerequisites** | First-build prerequisite validation: AOT stripping directory, `GenerateAll` completeness, `MetadataCheck` pass |
 | **VersionLogic** | Version auto-increment correctness, `GetCurrentVersion` build/display dual format, output path sync after version bump |
-| **PipelineTypeValidation** | `HybrdiScriptableBuildPipeline` throws exception when passed illegal parameter types |
+| **PipelineTypeValidation** | `HybridScriptableBuildPipeline` throws exception when passed illegal parameter types |
 | **CopyDllEdgeCases** | `CopyPatchedAOTDll` / `CopyHotUpdateDll` empty path defense, `CopyDllFileToByte` returns empty list when source directory missing |
 > Tests marked with `[Category("SlowTest")]` actually execute build commands and take longer; they are automatically skipped when the active platform does not match.
 

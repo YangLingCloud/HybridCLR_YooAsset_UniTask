@@ -1,11 +1,11 @@
-# AGENTS.md — com.yanglingyun.hyu v3.0.1
+# AGENTS.md — com.yanglingyun.hyu v3.1.0
 
 ## Project Overview
 
 This repository is a **pure Unity Package (UPM) root**, not a Unity project.
 
 - Package name: `com.yanglingyun.hyu`
-- Version: 3.0.0
+- Version: 3.1.0
 - Minimum Unity: 2022.3
 - Domain: HybridCLR + YooAsset hot-update build toolchain
 - Target platforms: Windows, Android, iOS
@@ -27,7 +27,7 @@ This package provides an all-in-one editor build pipeline for Unity hot-update s
 │   ├── HybridEditor.asmdef               # Editor-only asmdef
 │   ├── BuildHelper.cs                    # AOT metadata check, DLL copy, APK build, link.xml supplement
 │   ├── HybridBuilderWindow.cs            # UI Toolkit build window controller
-│   ├── HybridBuilderWIndow.uxml          # Window UI layout (note casing: WIndow)
+│   ├── HybridBuilderWindow.uxml          # Window UI layout
 │   ├── HybridBuilderSettings.cs          # Build config ScriptableObject + HybridBuildOption enum
 │   ├── HybridBuildPipeViewerBase.cs      # Build pipeline viewer base class
 │   ├── HybridBuildPipeViewerBase.uxml    # Viewer UI layout
@@ -36,7 +36,7 @@ This package provides an all-in-one editor build pipeline for Unity hot-update s
 │   ├── BuildPipelineTask/
 │   │   └── TaskBuildScript_SBP.cs        # SBP custom build task (script packaging)
 │   └── ScriptableBuildPipeline/
-│       ├── HybrdiScriptableBuildPipeline.cs      # SBP pipeline impl (note typo: Hybrdi)
+│       ├── HybridScriptableBuildPipeline.cs      # SBP pipeline impl
 │       └── HybridScriptableBuildParameters.cs    # SBP build parameters
 │
 ├── Runtime/                              # Runtime assembly: com.yanglingyun.hyu.Runtime
@@ -150,7 +150,7 @@ No `?path=` suffix needed — the repo root is the package root.
 - **`HybridBuildPipeViewerBase`** — Build pipeline viewer base class
 - **`HybridScriptableBuildPipelineViewer`** — SBP build pipeline viewer, distinguishes Asset/Script packaging
 - **`TaskBuildScript_SBP`** — SBP custom build task (script packaging flow)
-- **`HybrdiScriptableBuildPipeline`** — SBP pipeline implementation (note filename typo)
+- **`HybridScriptableBuildPipeline`** — SBP pipeline implementation
 - **`HybridScriptableBuildParameters`** — SBP build parameter definition
 - **`SceneHelper`** — Scene utilities
 
@@ -220,8 +220,6 @@ This repository is package source code. Build and test execution happens inside 
 
 The following filenames have spelling inconsistencies. When modifying, keep `.meta` files in sync:
 
-- `Editor/HybridBuilderWIndow.uxml` (`WIndow` instead of `Window`)
-- `Editor/ScriptableBuildPipeline/HybrdiScriptableBuildPipeline.cs` (`Hybrdi` instead of `Hybrid`)
 - `Samples~/HotUpdateSample/HotUpdateScripts/animate/` — lowercase directory name (should be PascalCase `Animate/`)
 
 ## Safety Rules

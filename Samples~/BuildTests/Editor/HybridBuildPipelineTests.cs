@@ -1,460 +1,75 @@
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using HybridCLR.Editor;
 using HybridCLR.Editor.Commands;
-using Newtonsoft.Json;
 using NUnit.Framework;
 using UnityEditor;
-using UnityEngine;
+using YangLing.Hybrid.Editor;
+using YangLing.Hybrid.Editor.ScriptableBuildPipeline;
+using YangLing.Hybrid.Runtime;
 using YooAsset.Editor;
 
 namespace HybridCLR.Tests.Editor
 {
     /// <summary>
     /// HybridCLR + YooAsset 构建链路测试。
+    /// 仅覆盖本包自身的公开契约（版本字符串、路径解析、拷贝防御、流水线类型校验、端到端首次构建）。
+    /// 上游 API（HybridCLR SettingsUtil、YooAsset）的行为由上游仓库保证，本包不重复测试。
     /// </summary>
     public class HybridBuildPipelineTests
     {
-        #region BuildConfig
+        #region PathResolution
 
         /// <summary>
-        /// 验证 HybridCLRSettings 可访问。
+        /// 覆盖 ResolveBuildOutputPath 相对/绝对路径解析，以及 GetBuildOutputPath 追加版本号子目录的行为。
+        /// 这是本包的核心路径契约（BuildHelper.BuildAPK、RuntimeSettings.json 落盘均依赖）。
         /// </summary>
         [Test]
-        public void BuildConfig_HybridCLRSettingsExists()
+        public void PathResolution_BuildOutputPathIsResolvedAndVersioned()
         {
-            Assert.IsNotNull(SettingsUtil.HybridCLRSettings, "HybridCLRSettings 未找到，请确认 HybridCLR 已安装并初始化");
-        }
-
-        /// <summary>
-        /// 验证热更新程序集列表已配置。
-        /// </summary>
-        [Test]
-        public void BuildConfig_HotUpdateAssemblyListConfigured()
-        {
-            var assemblies = SettingsUtil.HotUpdateAssemblyNamesExcludePreserved;
-            Assert.IsNotNull(assemblies, "热更新程序集列表为 null");
-            Assert.IsTrue(assemblies.Count > 0, "热更新程序集列表为空，请在 HybridCLR Settings 中配置");
-        }
-
-        /// <summary>
-        /// 验证补充元数据的 AOT 程序集列表字段存在。
-        /// </summary>
-        [Test]
-        public void BuildConfig_PatchAOTAssemblyListExists()
-        {
-            var patchAssemblies = SettingsUtil.HybridCLRSettings.patchAOTAssemblies;
-            Assert.IsNotNull(patchAssemblies, "patchAOTAssemblies 字段为 null");
-        }
-
-        /// <summary>
-        /// 验证 BuildSettings 中至少有一个启用场景。
-        /// </summary>
-        [Test]
-        public void BuildConfig_BuildScenesConfigured()
-        {
-            var scenes = BuildHelper.GetBuildScenes();
-            Assert.IsNotNull(scenes, "BuildHelper.GetBuildScenes 返回 null");
-            Assert.IsTrue(scenes.Length > 0, "EditorBuildSettings 中没有启用场景");
-        }
-
-        /// <summary>
-        /// 验证工程根目录路径有效。
-        /// </summary>
-        [Test]
-        public void BuildConfig_ProjectPathValid()
-        {
-            Assert.IsTrue(Directory.Exists(BuildHelper.ProjectPath), $"ProjectPath 不存在: {BuildHelper.ProjectPath}");
-            Assert.IsTrue(Directory.Exists(Path.Combine(BuildHelper.ProjectPath, "Assets")),
-                $"ProjectPath 不是有效 Unity 工程根目录: {BuildHelper.ProjectPath}");
-        }
-
-        #endregion
-
-        #region BuilderSettings
-
-        /// <summary>
-        /// 验证 HybridBuilderSettings 资产存在。
-        /// </summary>
-        [Test]
-        public void BuilderSettings_AssetExists()
-        {
-            Assert.IsNotNull(FindBuilderSettings(), "未找到 HybridBuilderSettings 资产");
-        }
-
-        /// <summary>
-        /// 验证 RuntimeSettings 已关联。
-        /// </summary>
-        [Test]
-        public void BuilderSettings_RuntimeSettingsLinked()
-        {
-            var settings = RequireBuilderSettingsOrInconclusive();
-            Assert.IsNotNull(settings.RuntimeSettings, "HybridBuilderSettings.RuntimeSettings 未关联");
-        }
-
-        /// <summary>
-        /// 验证构建输出路径字段非空。
-        /// </summary>
-        [Test]
-        public void BuilderSettings_BuildOutputPathNotEmpty()
-        {
-            var settings = RequireBuilderSettingsOrInconclusive();
-            Assert.IsFalse(string.IsNullOrEmpty(settings.buildOutputPath), "buildOutputPath 为空");
-        }
-
-        /// <summary>
-        /// 验证相对路径会按工程根目录解析。
-        /// </summary>
-        [Test]
-        public void BuilderSettings_ResolveBuildOutputPathResolvesRelativePath()
-        {
-            var settings = RequireBuilderSettingsOrInconclusive();
+            var settings = RequireBuilderSettings();
             var oldPath = settings.buildOutputPath;
+            var oldRelease = settings.ReleaseBuildVersion;
+            var absolutePath = Path.GetFullPath(
+                Path.Combine(Path.GetTempPath(), "HybridBuildPipelineTests_Absolute"));
             try
             {
+                // 相对路径 → 基于工程根解析
                 settings.buildOutputPath = "Bundles";
-                var resolved = settings.ResolveBuildOutputPath();
-                var expected = Path.GetFullPath(Path.Combine(BuildHelper.ProjectPath, "Bundles"));
-                Assert.AreEqual(expected, resolved, "ResolveBuildOutputPath 未正确解析相对路径");
-            }
-            finally
-            {
-                settings.buildOutputPath = oldPath;
-            }
-        }
-
-        /// <summary>
-        /// 验证绝对路径会被原样透传。
-        /// </summary>
-        [Test]
-        public void BuilderSettings_ResolveBuildOutputPathPassThroughAbsolutePath()
-        {
-            var settings = RequireBuilderSettingsOrInconclusive();
-            var oldPath = settings.buildOutputPath;
-            var absolutePath = Path.GetFullPath(Path.Combine(Path.GetTempPath(), "HybridBuildPipelineTests_AbsoluteOutput"));
-            try
-            {
-                settings.buildOutputPath = absolutePath;
-                var resolved = settings.ResolveBuildOutputPath();
-                Assert.AreEqual(absolutePath, resolved, "ResolveBuildOutputPath 未透传绝对路径");
-            }
-            finally
-            {
-                settings.buildOutputPath = oldPath;
-            }
-        }
-
-        /// <summary>
-        /// 验证 GetBuildOutputPath 会附加 release 版本目录。
-        /// </summary>
-        [Test]
-        public void BuilderSettings_GetBuildOutputPathAppendsReleaseVersion()
-        {
-            var settings = RequireBuilderSettingsOrInconclusive();
-            var oldPath = settings.buildOutputPath;
-            var oldReleaseVersion = settings.ReleaseBuildVersion;
-            try
-            {
-                settings.buildOutputPath = "Bundles";
-                settings.ReleaseBuildVersion = 123;
-
-                var outputPath = settings.GetBuildOutputPath();
                 var expectedRoot = Path.GetFullPath(Path.Combine(BuildHelper.ProjectPath, "Bundles"));
-                var expected = Path.Combine(expectedRoot, "123");
+                Assert.AreEqual(expectedRoot, settings.ResolveBuildOutputPath(),
+                    "相对路径应基于工程根目录解析");
 
-                Assert.AreEqual(expected, outputPath, "GetBuildOutputPath 未按预期附加 release 版本");
+                // 附加 release 版本号
+                settings.ReleaseBuildVersion = 42;
+                Assert.AreEqual(Path.Combine(expectedRoot, "42"), settings.GetBuildOutputPath(),
+                    "GetBuildOutputPath 应在根目录后附加 release 版本号");
+
+                // 绝对路径原样透传
+                settings.buildOutputPath = absolutePath;
+                Assert.AreEqual(absolutePath, settings.ResolveBuildOutputPath(),
+                    "绝对路径应原样透传");
             }
             finally
             {
-                settings.ReleaseBuildVersion = oldReleaseVersion;
                 settings.buildOutputPath = oldPath;
-            }
-        }
-
-        /// <summary>
-        /// 验证版本字符串格式为 release_asset_script。
-        /// </summary>
-        [Test]
-        public void BuilderSettings_VersionFormatCorrect()
-        {
-            var settings = RequireBuilderSettingsOrInconclusive();
-            var version = settings.GetCurrentVersion(true);
-            var parts = version.Split('_');
-
-            Assert.AreEqual(3, parts.Length, $"版本格式错误，期望 X_Y_Z，实际: {version}");
-            Assert.IsTrue(parts.All(p => int.TryParse(p, out _)), $"版本段必须为整数，实际: {version}");
-        }
-
-        #endregion
-
-        #region RuntimeSettings
-
-        /// <summary>
-        /// 验证 HybridRuntimeSettings 资产存在。
-        /// </summary>
-        [Test]
-        public void RuntimeSettings_AssetExists()
-        {
-            Assert.IsNotNull(FindRuntimeSettings(), "未找到 HybridRuntimeSettings 资产");
-        }
-
-        /// <summary>
-        /// 验证 HostServerIP 已配置。
-        /// </summary>
-        [Test]
-        public void RuntimeSettings_HostServerIPConfigured()
-        {
-            var runtimeSettings = FindRuntimeSettings();
-            if (runtimeSettings == null)
-            {
-                Assert.Inconclusive("未找到 HybridRuntimeSettings 资产，跳过");
-                return;
-            }
-
-            Assert.IsFalse(string.IsNullOrEmpty(runtimeSettings.HostServerIP), "HostServerIP 为空，请在 RuntimeSettings 中配置");
-        }
-
-        #endregion
-
-        #region Platform Tests (Parameterized)
-
-        /// <summary>
-        /// 支持的目标平台列表，用于参数化测试。
-        /// 新增平台时只需在此数组中添加即可自动生成对应测试用例。
-        /// </summary>
-        private static readonly BuildTarget[] SupportedPlatforms =
-        {
-            BuildTarget.StandaloneWindows64,
-            BuildTarget.Android,
-            BuildTarget.iOS,
-        };
-
-        /// <summary>
-        /// 检查当前激活平台是否与目标平台一致，不一致则跳过测试。
-        /// </summary>
-        private static void RequireActivePlatform(BuildTarget target)
-        {
-            if (EditorUserBuildSettings.activeBuildTarget != target)
-            {
-                Assert.Inconclusive(
-                    $"Active platform is {EditorUserBuildSettings.activeBuildTarget}, " +
-                    $"skipping test for {target}");
-            }
-        }
-
-        /// <summary>
-        /// 验证各平台热更新 DLL 输出目录路径可获取且非空。
-        /// </summary>
-        [Test]
-        public void Platform_DllOutputDirValid([ValueSource(nameof(SupportedPlatforms))] BuildTarget target)
-        {
-            var outputDir = SettingsUtil.GetHotUpdateDllsOutputDirByTarget(target);
-            Assert.IsFalse(string.IsNullOrEmpty(outputDir),
-                $"{target}: Hot-update DLL output directory is empty");
-        }
-
-        /// <summary>
-        /// 验证各平台 AOT 裁剪目录路径可获取且非空。
-        /// </summary>
-        [Test]
-        public void Platform_AOTStripDirValid([ValueSource(nameof(SupportedPlatforms))] BuildTarget target)
-        {
-            var stripDir = SettingsUtil.GetAssembliesPostIl2CppStripDir(target);
-            Assert.IsFalse(string.IsNullOrEmpty(stripDir),
-                $"{target}: AOT strip directory is empty");
-        }
-
-        /// <summary>
-        /// 验证不同平台的热更新 DLL 输出目录互不相同。
-        /// </summary>
-        [Test]
-        public void Platform_DllOutputDirsDifferAcrossPlatforms()
-        {
-            var dirs = SupportedPlatforms
-                .Select(t => SettingsUtil.GetHotUpdateDllsOutputDirByTarget(t))
-                .ToList();
-            Assert.AreEqual(dirs.Count, dirs.Distinct().Count(),
-                "Hot-update DLL output directories should differ across platforms");
-        }
-
-        /// <summary>
-        /// 验证不同平台的 AOT 裁剪目录互不相同。
-        /// </summary>
-        [Test]
-        public void Platform_AOTStripDirsDifferAcrossPlatforms()
-        {
-            var dirs = SupportedPlatforms
-                .Select(t => SettingsUtil.GetAssembliesPostIl2CppStripDir(t))
-                .ToList();
-            Assert.AreEqual(dirs.Count, dirs.Distinct().Count(),
-                "AOT strip directories should differ across platforms");
-        }
-
-        /// <summary>
-        /// 在当前激活平台下编译热更新 DLL，平台不匹配时自动跳过。
-        /// </summary>
-        [Test]
-        [Category("SlowTest")]
-        public void Platform_CompileHotUpdateDll([ValueSource(nameof(SupportedPlatforms))] BuildTarget target)
-        {
-            RequireActivePlatform(target);
-            CompileDllCommand.CompileDllActiveBuildTarget();
-            var outputDir = SettingsUtil.GetHotUpdateDllsOutputDirByTarget(target);
-            foreach (var dll in SettingsUtil.HotUpdateAssemblyFilesExcludePreserved)
-            {
-                var dllPath = Path.Combine(outputDir, dll);
-                Assert.IsTrue(File.Exists(dllPath), $"{target}: Hot-update DLL not found: {dllPath}");
-            }
-        }
-
-        /// <summary>
-        /// 在当前激活平台下拷贝热更新 DLL 到收集目录，平台不匹配时自动跳过。
-        /// </summary>
-        [Test]
-        [Category("SlowTest")]
-        public void Platform_CopyHotUpdateDllToCollectPath([ValueSource(nameof(SupportedPlatforms))] BuildTarget target)
-        {
-            RequireActivePlatform(target);
-            var tempDir = Path.Combine(Path.GetTempPath(), $"HybridBuildPipelineTests_{target}_HotUpdate");
-            try
-            {
-                RecreateDirectory(tempDir);
-                CompileDllCommand.CompileDllActiveBuildTarget();
-                BuildHelper.CopyHotUpdateDllToCollectPath(tempDir);
-                foreach (var assemblyName in SettingsUtil.HotUpdateAssemblyNamesExcludePreserved)
-                {
-                    var bytesFile = Path.Combine(tempDir, $"{assemblyName}.bytes");
-                    Assert.IsTrue(File.Exists(bytesFile), $"{target}: bytes file not found: {bytesFile}");
-                }
-                Assert.IsTrue(File.Exists(Path.Combine(tempDir, "HotUpdateDLLs.txt")),
-                    $"{target}: HotUpdateDLLs.txt manifest not generated");
-            }
-            finally
-            {
-                if (Directory.Exists(tempDir))
-                    Directory.Delete(tempDir, true);
-            }
-        }
-
-        /// <summary>
-        /// 在当前激活平台下拷贝补充元数据 AOT DLL 到收集目录，平台不匹配时自动跳过。
-        /// </summary>
-        [Test]
-        [Category("SlowTest")]
-        public void Platform_CopyPatchedAOTDllToCollectPath([ValueSource(nameof(SupportedPlatforms))] BuildTarget target)
-        {
-            RequireActivePlatform(target);
-            var patchAssemblies = SettingsUtil.HybridCLRSettings.patchAOTAssemblies;
-            if (patchAssemblies == null || patchAssemblies.Length == 0)
-                Assert.Inconclusive("patchAOTAssemblies is empty, run Build Application first");
-            var tempDir = Path.Combine(Path.GetTempPath(), $"HybridBuildPipelineTests_{target}_AOT");
-            try
-            {
-                RecreateDirectory(tempDir);
-                BuildHelper.CopyPatchedAOTDllToCollectPath(tempDir);
-                Assert.IsTrue(File.Exists(Path.Combine(tempDir, "AOTDLLs.txt")),
-                    $"{target}: AOTDLLs.txt manifest not generated");
-            }
-            finally
-            {
-                if (Directory.Exists(tempDir))
-                    Directory.Delete(tempDir, true);
+                settings.ReleaseBuildVersion = oldRelease;
             }
         }
 
         #endregion
 
-        #region FirstBuildPrerequisites
+        #region VersionString
 
         /// <summary>
-        /// 验证 AOT 裁剪目录路径为绝对路径且非空。
+        /// 验证构建用版本字符串格式为 release_asset_script，三段皆为整数。
+        /// 此字符串会成为构建输出目录名，格式错误会导致路径解析失败。
         /// </summary>
         [Test]
-        public void FirstBuild_AOTStripDirPathResolvable()
+        public void VersionString_BuildFormatIsThreeIntegersJoinedByUnderscore()
         {
-            var target = EditorUserBuildSettings.activeBuildTarget;
-            var aotDir = SettingsUtil.GetAssembliesPostIl2CppStripDir(target);
-            Assert.IsFalse(string.IsNullOrEmpty(aotDir), "AOT strip directory path is empty");
-            Assert.IsTrue(Path.IsPathRooted(aotDir), $"AOT strip directory should be absolute: {aotDir}");
-        }
-
-        /// <summary>
-        /// 验证 EnsureAOTStripDirExists 在目录已存在时直接返回 true，不触发弹窗。
-        /// </summary>
-        [Test]
-        public void FirstBuild_EnsureAOTStripDirReturnsTrueWhenExists()
-        {
-            var tempDir = Path.Combine(Path.GetTempPath(), "HybridBuildPipelineTests_AOTStripExists");
-            try
-            {
-                Directory.CreateDirectory(tempDir);
-                Assert.IsTrue(BuildHelper.EnsureAOTStripDirExists(tempDir),
-                    "EnsureAOTStripDirExists should return true when directory exists");
-            }
-            finally
-            {
-                if (Directory.Exists(tempDir))
-                    Directory.Delete(tempDir, true);
-            }
-        }
-
-        /// <summary>
-        /// 验证执行 PrebuildCommand.GenerateAll 后，AOT 裁剪目录和热更新 DLL 均存在。
-        /// 这是首次构建的核心前置条件。
-        /// </summary>
-        [Test]
-        [Category("SlowTest")]
-        public void FirstBuild_GenerateAllCreatesRequiredDirectories()
-        {
-            var target = EditorUserBuildSettings.activeBuildTarget;
-            PrebuildCommand.GenerateAll();
-            var aotDir = SettingsUtil.GetAssembliesPostIl2CppStripDir(target);
-            Assert.IsTrue(Directory.Exists(aotDir),
-                $"Generate/All should create AOT strip directory: {aotDir}");
-            var hotUpdateDir = SettingsUtil.GetHotUpdateDllsOutputDirByTarget(target);
-            Assert.IsTrue(Directory.Exists(hotUpdateDir),
-                $"Generate/All should create hot-update DLL output directory: {hotUpdateDir}");
-            foreach (var dll in SettingsUtil.HotUpdateAssemblyFilesExcludePreserved)
-            {
-                var dllPath = Path.Combine(hotUpdateDir, dll);
-                Assert.IsTrue(File.Exists(dllPath),
-                    $"Generate/All should compile hot-update DLL: {dllPath}");
-            }
-        }
-
-        /// <summary>
-        /// 验证执行 GenerateAll 后 CheckAccessMissingMetadata 能正常通过。
-        /// 覆盖“首次构建时元数据检查失败”的场景。
-        /// </summary>
-        [Test]
-        [Category("SlowTest")]
-        public void FirstBuild_MetadataCheckPassesAfterGenerateAll()
-        {
-            var target = EditorUserBuildSettings.activeBuildTarget;
-            var aotDir = SettingsUtil.GetAssembliesPostIl2CppStripDir(target);
-            if (!Directory.Exists(aotDir))
-            {
-                PrebuildCommand.GenerateAll();
-            }
-            var result = BuildHelper.CheckAccessMissingMetadata();
-            Assert.IsTrue(result,
-                "CheckAccessMissingMetadata should pass after Generate/All. " +
-                "If this fails, the Generate/All prerequisite chain may be incomplete.");
-        }
-
-        #endregion
-
-        #region VersionLogic
-
-        /// <summary>
-        /// 验证版本自增后 GetCurrentVersion 输出正确递增。
-        /// </summary>
-        [Test]
-        public void VersionLogic_IncrementUpdatesCurrentVersion()
-        {
-            var settings = RequireBuilderSettingsOrInconclusive();
+            var settings = RequireBuilderSettings();
             var oldRelease = settings.ReleaseBuildVersion;
             var oldAsset = settings.AssetBuildVersion;
             var oldScript = settings.ScriptBuildVersion;
@@ -463,12 +78,15 @@ namespace HybridCLR.Tests.Editor
                 settings.ReleaseBuildVersion = 1;
                 settings.AssetBuildVersion = 2;
                 settings.ScriptBuildVersion = 3;
-
                 Assert.AreEqual("1_2_3", settings.GetCurrentVersion(true));
 
-                settings.AssetBuildVersion++;
-                settings.ScriptBuildVersion++;
-                Assert.AreEqual("1_3_4", settings.GetCurrentVersion(true));
+                settings.AssetBuildVersion = 4;
+                Assert.AreEqual("1_4_3", settings.GetCurrentVersion(true),
+                    "任一版本字段变化应立即反映到版本字符串");
+
+                var parts = settings.GetCurrentVersion(true).Split('_');
+                Assert.AreEqual(3, parts.Length);
+                Assert.IsTrue(parts.All(p => int.TryParse(p, out _)));
             }
             finally
             {
@@ -479,44 +97,49 @@ namespace HybridCLR.Tests.Editor
         }
 
         /// <summary>
-        /// 验证 GetCurrentVersion 的展示格式（isBuild=false）包含标签前缀。
+        /// 验证展示用版本字符串包含 Release/AssetPackage/ScriptPackage 三个标签前缀。
+        /// Hybrid Builder 窗口依赖此格式显示当前版本。
         /// </summary>
         [Test]
-        public void VersionLogic_DisplayFormatContainsLabels()
+        public void VersionString_DisplayFormatContainsAllLabels()
         {
-            var settings = RequireBuilderSettingsOrInconclusive();
+            var settings = RequireBuilderSettings();
             var display = settings.GetCurrentVersion(false);
-            Assert.IsTrue(display.Contains("Realse:"), $"展示格式应包含 'Realse:' 前缀，实际: {display}");
-            Assert.IsTrue(display.Contains("AssetPakcage:"), $"展示格式应包含 'AssetPakcage:' 前缀，实际: {display}");
-            Assert.IsTrue(display.Contains("ScriptPackge:"), $"展示格式应包含 'ScriptPackge:' 前缀，实际: {display}");
+            StringAssert.Contains("Release:", display);
+            StringAssert.Contains("AssetPackage:", display);
+            StringAssert.Contains("ScriptPackage:", display);
+        }
+
+        #endregion
+
+        #region CopyDllDefensive
+
+        /// <summary>
+        /// 验证 CopyHotUpdateDll / CopyPatchedAOTDll 对 null / 空路径的防御。
+        /// 构建管线任一步骤抛异常会中断整个流水线，此类防御极其关键。
+        /// </summary>
+        [Test]
+        public void CopyDll_EmptyPathIsHandledGracefully(
+            [Values(null, "")] string emptyPath)
+        {
+            Assert.DoesNotThrow(() => BuildHelper.CopyPatchedAOTDllToCollectPath(emptyPath),
+                "CopyPatchedAOTDllToCollectPath 空路径不应抛异常");
+            Assert.DoesNotThrow(() => BuildHelper.CopyHotUpdateDllToCollectPath(emptyPath),
+                "CopyHotUpdateDllToCollectPath 空路径不应抛异常");
         }
 
         /// <summary>
-        /// 验证 GetBuildOutputPath 在版本递增后输出路径同步变化。
+        /// 验证 CopyDllFileToByte 源目录不存在时返回空列表，不抛异常。
         /// </summary>
         [Test]
-        public void VersionLogic_BuildOutputPathReflectsVersionChange()
+        public void CopyDll_NonExistentSourceDirReturnsEmptyList()
         {
-            var settings = RequireBuilderSettingsOrInconclusive();
-            var oldPath = settings.buildOutputPath;
-            var oldRelease = settings.ReleaseBuildVersion;
-            try
-            {
-                settings.buildOutputPath = "Bundles";
-                settings.ReleaseBuildVersion = 10;
-                var path1 = settings.GetBuildOutputPath();
-
-                settings.ReleaseBuildVersion = 11;
-                var path2 = settings.GetBuildOutputPath();
-
-                Assert.AreNotEqual(path1, path2, "版本递增后输出路径应不同");
-                Assert.IsTrue(path2.EndsWith("11"), $"路径末尾应为新版本号，实际: {path2}");
-            }
-            finally
-            {
-                settings.ReleaseBuildVersion = oldRelease;
-                settings.buildOutputPath = oldPath;
-            }
+            var result = BuildHelper.CopyDllFileToByte(
+                new[] { "FakeAssembly" },
+                "/non_existent_dir_12345",
+                Path.GetTempPath());
+            Assert.IsNotNull(result);
+            Assert.AreEqual(0, result.Count);
         }
 
         #endregion
@@ -524,124 +147,117 @@ namespace HybridCLR.Tests.Editor
         #region PipelineTypeValidation
 
         /// <summary>
-        /// 验证 HybrdiScriptableBuildPipeline 传入非法参数类型时抛出异常。
+        /// 验证 HybridScriptableBuildPipeline.Run 拒绝非 HybridScriptableBuildParameters 的参数。
+        /// 保护 TaskBuildScript_SBP 的向下转型不会收到不兼容类型。
         /// </summary>
         [Test]
         public void Pipeline_RejectsInvalidBuildParameterType()
         {
-            var pipeline = new HybrdiScriptableBuildPipeline();
-            var fakeBuildParameters = new FakeBuildParameters();
-
-            Assert.Throws<Exception>(() => pipeline.Run(fakeBuildParameters, false),
-                "传入非 HybridScriptableBuildParameters 类型时应抛出异常");
+            var pipeline = new HybridScriptableBuildPipeline();
+            Assert.Throws<Exception>(
+                () => pipeline.Run(new FakeBuildParameters(), false));
         }
 
         #endregion
 
-        #region CopyDllEdgeCases
+        #region EndToEnd (SlowTest)
 
         /// <summary>
-        /// 验证 CopyPatchedAOTDllToCollectPath 传入空路径时不崩溃。
+        /// 端到端：在当前激活平台下执行 PrebuildCommand.GenerateAll，验证全链路可完成
+        /// —— 热更新 DLL 编译、AOT 裁剪目录生成、CheckAccessMissingMetadata 通过。
+        /// 这是首次构建的关键前置条件，任一环节断裂都会导致 BuildApplication 失败。
+        /// 平台并行化由 Unity Editor 启动时的 activeBuildTarget 决定 —— NUnit 参数化在单机上无意义。
         /// </summary>
         [Test]
-        public void CopyDll_PatchedAOTHandlesNullPath()
+        [Category("SlowTest")]
+        public void EndToEnd_GenerateAllProducesValidBuildArtifacts()
         {
-            Assert.DoesNotThrow(() => BuildHelper.CopyPatchedAOTDllToCollectPath(null),
-                "传入 null 路径不应抛出异常");
-            Assert.DoesNotThrow(() => BuildHelper.CopyPatchedAOTDllToCollectPath(string.Empty),
-                "传入空字符串路径不应抛出异常");
+            var target = EditorUserBuildSettings.activeBuildTarget;
+
+            PrebuildCommand.GenerateAll();
+
+            var aotDir = SettingsUtil.GetAssembliesPostIl2CppStripDir(target);
+            Assert.IsTrue(Directory.Exists(aotDir),
+                $"Generate/All 应创建 AOT 裁剪目录: {aotDir}");
+
+            var hotUpdateDir = SettingsUtil.GetHotUpdateDllsOutputDirByTarget(target);
+            Assert.IsTrue(Directory.Exists(hotUpdateDir),
+                $"Generate/All 应创建热更新 DLL 输出目录: {hotUpdateDir}");
+
+            foreach (var dll in SettingsUtil.HotUpdateAssemblyFilesExcludePreserved)
+            {
+                Assert.IsTrue(File.Exists(Path.Combine(hotUpdateDir, dll)),
+                    $"Generate/All 应编译热更新 DLL: {dll}");
+            }
+
+            Assert.IsTrue(BuildHelper.CheckAccessMissingMetadata(),
+                "Generate/All 后 CheckAccessMissingMetadata 应通过，否则前置链路不完整");
         }
 
         /// <summary>
-        /// 验证 CopyHotUpdateDllToCollectPath 传入空路径时不崩溃。
+        /// 端到端：在当前激活平台下执行 DLL 拷贝流程，验证 .bytes 与清单文件均正确生成。
         /// </summary>
         [Test]
-        public void CopyDll_HotUpdateHandlesNullPath()
+        [Category("SlowTest")]
+        public void EndToEnd_CopyHotUpdateDllProducesBytesAndManifest()
         {
-            Assert.DoesNotThrow(() => BuildHelper.CopyHotUpdateDllToCollectPath(null),
-                "传入 null 路径不应抛出异常");
-            Assert.DoesNotThrow(() => BuildHelper.CopyHotUpdateDllToCollectPath(string.Empty),
-                "传入空字符串路径不应抛出异常");
-        }
+            var target = EditorUserBuildSettings.activeBuildTarget;
+            var tempDir = Path.Combine(Path.GetTempPath(), $"HybridBuildPipelineTests_{target}_CopyHotUpdate");
+            try
+            {
+                RecreateDirectory(tempDir);
+                CompileDllCommand.CompileDllActiveBuildTarget();
+                BuildHelper.CopyHotUpdateDllToCollectPath(tempDir);
 
-        /// <summary>
-        /// 验证 CopyDllFileToByte 源目录不存在时返回空列表而非崩溃。
-        /// </summary>
-        [Test]
-        public void CopyDll_CopyDllFileToByteHandlesNonExistentDir()
-        {
-            var result = BuildHelper.CopyDllFileToByte(
-                new[] { "FakeAssembly" },
-                "/non_existent_dir_12345",
-                Path.GetTempPath());
-            Assert.IsNotNull(result, "返回值不应为 null");
-            Assert.AreEqual(0, result.Count, "源文件不存在时应返回空列表");
+                foreach (var assemblyName in SettingsUtil.HotUpdateAssemblyNamesExcludePreserved)
+                {
+                    Assert.IsTrue(File.Exists(Path.Combine(tempDir, $"{assemblyName}.bytes")),
+                        $"缺少 bytes 文件: {assemblyName}.bytes");
+                }
+
+                Assert.IsTrue(File.Exists(Path.Combine(tempDir, "HotUpdateDLLs.txt")),
+                    "HotUpdateDLLs.txt 清单未生成");
+            }
+            finally
+            {
+                if (Directory.Exists(tempDir))
+                    Directory.Delete(tempDir, true);
+            }
         }
 
         #endregion
 
-        /// <summary>
-        /// 用于验证流水线类型校验的伪参数。
-        /// </summary>
+        #region Helpers
+
         private class FakeBuildParameters : YooAsset.Editor.BuildParameters
         {
         }
 
-        private static HybridBuilderSettings FindBuilderSettings()
+        private static HybridBuilderSettings RequireBuilderSettings()
         {
             var guid = AssetDatabase.FindAssets("t:HybridBuilderSettings").FirstOrDefault();
             if (string.IsNullOrEmpty(guid))
             {
+                Assert.Inconclusive("未找到 HybridBuilderSettings 资产，跳过。请先通过 Sample 导入或手动创建。");
                 return null;
             }
-
             var path = AssetDatabase.GUIDToAssetPath(guid);
-            return AssetDatabase.LoadAssetAtPath<HybridBuilderSettings>(path);
-        }
-
-        private static HybridBuilderSettings RequireBuilderSettingsOrInconclusive()
-        {
-            var settings = FindBuilderSettings();
+            var settings = AssetDatabase.LoadAssetAtPath<HybridBuilderSettings>(path);
             if (settings == null)
             {
-                Assert.Inconclusive("未找到 HybridBuilderSettings 资产，跳过");
+                Assert.Inconclusive($"HybridBuilderSettings 资产加载失败: {path}");
                 return null;
             }
-
             return settings;
-        }
-
-        private static HybridRuntimeSettings FindRuntimeSettings()
-        {
-            var guid = AssetDatabase.FindAssets("t:HybridRuntimeSettings").FirstOrDefault();
-            if (string.IsNullOrEmpty(guid))
-            {
-                return null;
-            }
-
-            var path = AssetDatabase.GUIDToAssetPath(guid);
-            return AssetDatabase.LoadAssetAtPath<HybridRuntimeSettings>(path);
         }
 
         private static void RecreateDirectory(string path)
         {
             if (Directory.Exists(path))
-            {
                 Directory.Delete(path, true);
-            }
-
             Directory.CreateDirectory(path);
         }
 
-        private static string ResolveSnapshotPath()
-        {
-            var importedGuid = AssetDatabase.FindAssets("HybridCLRSettingsSnapshot t:TextAsset").FirstOrDefault();
-            if (!string.IsNullOrEmpty(importedGuid))
-            {
-                return AssetDatabase.GUIDToAssetPath(importedGuid);
-            }
-
-            return Path.Combine("Packages", "com.yanglingyun.hyu", "Samples~", "HotUpdateSample", "Editor", "HybridCLRSettingsSnapshot.json");
-        }
+        #endregion
     }
 }

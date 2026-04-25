@@ -1,9 +1,11 @@
 using System.IO;
-using HybridCLR.Editor;
 using HybridCLR.Editor.Commands;
-using UnityEditor;
 using UnityEngine;
+using YangLing.Hybrid.Editor.ScriptableBuildPipeline;
 using YooAsset.Editor;
+
+namespace YangLing.Hybrid.Editor.BuildPipelineTask
+{
 
 public class TaskBuildScript_SBP : IBuildTask
 {
@@ -17,10 +19,12 @@ public class TaskBuildScript_SBP : IBuildTask
 
 
         var projectPath = Directory.GetParent(Application.dataPath).FullName;
-        var pathcedAOTDllFullPath = Path.Combine(projectPath, buildParameters.PatchedAOTDLLCollectPath);
-        BuildHelper.CopyPatchedAOTDllToCollectPath(pathcedAOTDllFullPath);
+        var patchedAOTDllFullPath = Path.Combine(projectPath, buildParameters.PatchedAOTDLLCollectPath);
+        BuildHelper.CopyPatchedAOTDllToCollectPath(patchedAOTDllFullPath);
 
         var hotUpdateDLLFullPath = Path.Combine(projectPath, buildParameters.HotUpdateDLLCollectPath);
         BuildHelper.CopyHotUpdateDllToCollectPath(hotUpdateDLLFullPath);
     }
 }
+}
+

@@ -1,24 +1,23 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using YangLing.Hybrid.Editor.BuildPipelineTask;
 using YooAsset.Editor;
 
-public class HybrdiScriptableBuildPipeline : IBuildPipeline
+namespace YangLing.Hybrid.Editor.ScriptableBuildPipeline
+{
+
+public class HybridScriptableBuildPipeline : IBuildPipeline
 {
     public BuildResult Run(BuildParameters buildParameters, bool enableLog)
     {
-        if (buildParameters is HybridScriptableBuildParameters)
+        if (buildParameters is HybridScriptableBuildParameters hybridBuildParameters)
         {
-            var hybridBuildParameters = buildParameters as HybridScriptableBuildParameters;
-
             AssetBundleBuilder builder = new AssetBundleBuilder();
-            return builder.Run(buildParameters, GetHybridBuildPipeline(),
-                enableLog);
+            return builder.Run(hybridBuildParameters, GetHybridBuildPipeline(), enableLog);
         }
-        else
-        {
-            throw new Exception($"Invalid build parameter type : {buildParameters.GetType().Name}");
-        }
+
+        throw new Exception($"Invalid build parameter type : {buildParameters.GetType().Name}");
     }
 
     private List<IBuildTask> GetHybridBuildPipeline()
@@ -45,3 +44,5 @@ public class HybrdiScriptableBuildPipeline : IBuildPipeline
         return pipeline;
     }
 }
+}
+

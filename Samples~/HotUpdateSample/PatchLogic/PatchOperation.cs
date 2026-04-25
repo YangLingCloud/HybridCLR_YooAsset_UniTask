@@ -1,6 +1,7 @@
 ﻿using UnityEngine;
 using UniFramework.Machine;
 using UniFramework.Event;
+using YangLing.Hybrid.Runtime;
 using YooAsset;
 
 public class PatchOperation : GameAsyncOperation

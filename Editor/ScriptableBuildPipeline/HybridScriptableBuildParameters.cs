@@ -3,6 +3,9 @@ using UnityEngine;
 using YooAsset.Editor;
 using BuildParameters = YooAsset.Editor.BuildParameters;
 
+namespace YangLing.Hybrid.Editor.ScriptableBuildPipeline
+{
+
 public class HybridScriptableBuildParameters : BuildParameters
 {
         /// <summary>
@@ -99,3 +102,5 @@ public class HybridScriptableBuildParameters : BuildParameters
             return buildParams;
         }
 }
+}
+
